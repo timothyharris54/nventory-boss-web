@@ -1,0 +1,261 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getPurchaseOrderById } from './api';
+import type { PurchaseOrderDetail } from './purchase-order-types';
+import { cancelPurchaseOrder } from './api';
+import { toast } from 'sonner';
+import type { ReactNode } from 'react';
+
+type Props = {
+  purchaseOrderId: string;
+  onClose: () => void;
+};
+
+export function PurchaseOrderDetailPanel({
+  purchaseOrderId,
+  onClose,
+}: Props) {
+  const {
+    data: purchaseOrder,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['purchase-order', purchaseOrderId],
+    queryFn: () => getPurchaseOrderById(purchaseOrderId),
+    enabled: !!purchaseOrderId,
+  });
+  const queryClient = useQueryClient();
+  //console.log('PurchaseOrderDetailPanel po status {0}', purchaseOrder?.status);
+  let lifeCycleStatus = 'Unknown';
+  if (purchaseOrder?.status === 'draft') {
+    lifeCycleStatus = 'Draft';
+  } else if (purchaseOrder?.status === 'submitted') {
+    lifeCycleStatus = 'Draft -> Submitted';
+  } else if (purchaseOrder?.status === 'partially_received') {
+    lifeCycleStatus = 'Draft -> Submitted -> Partially Received';
+  } else if (purchaseOrder?.status === 'received') {
+    lifeCycleStatus = 'Draft -> Submitted -> Partially Received -> Received';
+  } else if (purchaseOrder?.status === 'cancelled') {
+    lifeCycleStatus = 'Cancelled';
+  }
+  const cancelPurchaseOrderMutation = useMutation({
+    mutationFn: (id: string) => cancelPurchaseOrder(id),
+
+    onSuccess: () => {
+      toast.success('Purchase order cancelled.');
+
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+      queryClient.invalidateQueries({
+        queryKey: ['purchase-order', purchaseOrderId],
+      });
+
+      onClose(); // optional: close panel after cancel
+    },
+
+    onError: () => {
+      toast.error('Unable to cancel purchase order.');
+    },
+  });
+
+  const handleCancel = () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to cancel this purchase order?'
+    );
+
+    if (!confirmed) return;
+
+    if (purchaseOrder) {
+      cancelPurchaseOrderMutation.mutate(purchaseOrder.id);
+    }
+  };
+    
+  function DetailSection({
+    title,
+    children,
+  }: {
+    title: string;
+    children: ReactNode;
+  }) {
+    return (
+      <section className="rounded-xl border bg-white p-4 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-gray-900">
+          {title}
+        </h3>
+        {children}
+      </section>
+    );
+  }  
+  return (
+<div className="fixed inset-0 z-50 flex justify-end">
+  <div
+    className="absolute inset-0 bg-black/30"
+    onClick={onClose}
+  />
+
+  <aside
+    className="relative h-full w-full max-w-4xl animate-slide-in-right overflow-y-auto bg-white shadow-2xl"
+    onClick={(event) => event.stopPropagation()}
+  >
+    <div className="sticky top-0 z-10 border-b bg-white px-6 py-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            Purchase Order
+          </p>
+          <h2 className="text-xl font-semibold">
+            {purchaseOrder?.poNumber ?? 'Loading...'}
+          </h2>
+          {purchaseOrder && (
+            <p className="text-sm text-gray-500">
+              {purchaseOrder.vendor.name} · {purchaseOrder.locationCode}
+            </p>
+          )}
+        </div>
+        <div className="flex items-right gap-3">
+      {(purchaseOrder?.status === 'draft' ||
+          purchaseOrder?.status === 'submitted') && (
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+          >
+            Cancel PO
+          </button>
+        )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Close
+          </button>
+        </div>    
+      </div>
+    </div>
+
+    <div className="space-y-5 px-6 py-5">
+      <DetailSection title="Summary">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-xs text-gray-500">Status</p>
+            <p className="font-medium capitalize">
+              {purchaseOrder?.status?.replaceAll('_', ' ')}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500">Vendor</p>
+            <p className="font-medium">{purchaseOrder?.vendor?.name}</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500">Location</p>
+            <p className="font-medium">{purchaseOrder?.locationCode}</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500">Expected</p>
+            <p className="font-medium">
+              {purchaseOrder?.expectedAt
+                ? new Date(purchaseOrder.expectedAt).toLocaleDateString()
+                : '—'}
+            </p>
+          </div>
+        </div>
+      </DetailSection>
+      <DetailSection title="Line Items">
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+              <tr>
+                <th className="px-3 py-2">Product</th>
+                <th className="px-3 py-2 text-right">Ordered</th>
+                <th className="px-3 py-2 text-right">Received</th>
+                <th className="px-3 py-2 text-right">Remaining</th>
+                <th className="px-3 py-2 text-right">Unit Cost</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {purchaseOrder?.lines.map((line) => {
+                const ordered = Number(line.orderedQty);
+                const received = Number(line.receivedQty);
+                const remaining = ordered - received;
+
+                return (
+                  <tr key={line.id} className="border-t">
+                    <td className="px-3 py-3">
+                      <div className="font-medium">{line.product.name}</div>
+                      <div className="text-xs text-gray-500">
+                        SKU: {line.product.sku}
+                      </div>
+                    </td>
+
+                    <td className="px-3 py-3 text-right">{line.orderedQty}</td>
+                    <td className="px-3 py-3 text-right">{line.receivedQty}</td>
+                    <td className="px-3 py-3 text-right">{remaining}</td>
+                    <td className="px-3 py-3 text-right">${line.unitCost}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </DetailSection>
+      <DetailSection title="Receipt History">
+        {purchaseOrder?.receipts.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No receipts recorded yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {purchaseOrder?.receipts.map((receipt) => (
+              <div key={receipt.id} className="rounded-lg border p-4">
+                <div className="mb-3 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-medium">
+                      {new Date(receipt.receivedAt).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Location: {receipt.locationCode}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-gray-400">
+                    Receipt #{receipt.id}
+                  </p>
+                </div>
+
+                {receipt.notes && (
+                  <p className="mb-3 text-sm text-gray-600">
+                    {receipt.notes}
+                  </p>
+                )}
+
+                {'lines' in receipt && Array.isArray(receipt.lines) && (
+                  <div className="rounded-md bg-gray-50 p-3">
+                    {receipt.lines.map((line) => (
+                      <div
+                        key={line.id}
+                        className="flex justify-between py-1 text-sm"
+                      >
+                        <span>
+                          {line.product?.name ?? `Product ${line.productId}`}
+                        </span>
+                        <span className="font-medium">
+                          {line.receivedQty}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </DetailSection>      
+    </div>
+  </aside>
+</div>
+  );
+}

@@ -1,0 +1,48 @@
+import { Navigate, useRoutes } from 'react-router-dom';
+import AppShell from '../layouts/app-shell';
+import DashboardPage from '../../features/dashboard/dashboard-page';
+import InventoryPage from '../../features/inventory/inventory-page';
+import LedgerPage from '../../features/ledger/ledger-page';
+import ReservationsPage from '../../features/reservations/reservations-page';
+import AdjustmentsPage from '../../features/movements/adjustments-page';
+import TransfersPage from '../../features/movements/transfers-page';
+import RecommendationsPage from '../../features/procurement/recommendations-page';
+import PurchaseOrdersPage from '../../features/procurement/purchase-orders-page';
+import LoginPage from '../../features/auth/login-page';
+import RequireAuth from '../../features/auth/require-auth';
+import { routes } from '../../lib/constants/routes';
+
+export function AppRouter() {
+  return useRoutes([
+    {
+      path: routes.login,
+      element: <LoginPage />,
+    },
+    {
+      element: <RequireAuth />,
+      children: [
+        {
+          path: '/',
+          element: <AppShell />,
+          children: [
+            { index: true, element: <Navigate to={routes.dashboard} replace /> },
+            { path: routes.dashboard.slice(1), element: <DashboardPage /> },
+            { path: routes.inventory.slice(1), element: <InventoryPage /> },
+            { path: routes.ledger.slice(1), element: <LedgerPage /> },
+            { path: routes.reservations.slice(1), element: <ReservationsPage /> },
+            { path: routes.adjustments.slice(1), element: <AdjustmentsPage /> },
+            { path: routes.transfers.slice(1), element: <TransfersPage /> },
+            {
+              path: routes.recommendations.slice(1),
+              element: <RecommendationsPage />,
+            },
+            {
+              path: routes.purchaseOrders.slice(1),
+              element: <PurchaseOrdersPage />,
+            },
+          ],
+        },
+      ],
+    },
+  ]);
+}
