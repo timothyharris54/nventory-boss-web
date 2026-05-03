@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPurchaseOrderById } from './api';
-import type { PurchaseOrderDetail } from './purchase-order-types';
 import { cancelPurchaseOrder } from './api';
 import { toast } from 'sonner';
-import type { ReactNode } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
+import { EditPurchaseOrderModal } from './edit-purchase-order-modal';
+import { updatePurchaseOrder } from './api';
+import type { PurchaseOrderDetail, UpdatePurchaseOrderDto } from './purchase-order-types';
 
 type Props = {
   purchaseOrderId: string;
@@ -24,6 +26,7 @@ export function PurchaseOrderDetailPanel({
     queryFn: () => getPurchaseOrderById(purchaseOrderId),
     enabled: !!purchaseOrderId,
   });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const queryClient = useQueryClient();
   //console.log('PurchaseOrderDetailPanel po status {0}', purchaseOrder?.status);
   let lifeCycleStatus = 'Unknown';
@@ -48,7 +51,6 @@ export function PurchaseOrderDetailPanel({
       queryClient.invalidateQueries({
         queryKey: ['purchase-order', purchaseOrderId],
       });
-
       onClose(); // optional: close panel after cancel
     },
 
@@ -112,14 +114,24 @@ export function PurchaseOrderDetailPanel({
           )}
         </div>
         <div className="flex items-right gap-3">
+      {purchaseOrder?.status === 'draft' && (
+        <button
+          type="button"
+          onClick={() => setIsEditModalOpen(true)}
+          className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+        >
+          Edit Draft
+        </button>
+      )}          
       {(purchaseOrder?.status === 'draft' ||
           purchaseOrder?.status === 'submitted') && (
           <button
             type="button"
             onClick={handleCancel}
+            disabled={cancelPurchaseOrderMutation.isPending}
             className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
           >
-            Cancel PO
+            {cancelPurchaseOrderMutation.isPending ? 'Cancelling...' : 'Cancel PO'}
           </button>
         )}
           <button
@@ -255,6 +267,12 @@ export function PurchaseOrderDetailPanel({
         )}
       </DetailSection>      
     </div>
+    {isEditModalOpen && purchaseOrderId && EditPurchaseOrderModal && (
+      <EditPurchaseOrderModal
+        purchaseOrder={purchaseOrder as PurchaseOrderDetail}
+        onClose={() => setIsEditModalOpen(false)}
+      />
+    )}    
   </aside>
 </div>
   );
