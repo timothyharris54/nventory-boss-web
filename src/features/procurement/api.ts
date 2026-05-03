@@ -4,7 +4,7 @@ import type {
   RunReplenishmentRequest,
   RunReplenishmentResponse,
   RecommendationStatus,
-  
+  UpdatePurchaseOrderDto  
 } from './types';
 import type { 
   PurchaseOrderDetail,
@@ -75,8 +75,8 @@ export function submitPurchaseOrder(payload: {
   );
 }
 
-export function getPurchaseOrderById(id: string): Promise<PurchaseOrderDetail> {
-  return apiFetch<PurchaseOrderDetail>(`/procurement/purchase-order/${id}`);
+export function getPurchaseOrderById(purchaseOrderId: string): Promise<PurchaseOrderDetail> {
+  return apiFetch<PurchaseOrderDetail>(`/procurement/purchase-order/${purchaseOrderId}`);
 }
 
 export function receivePurchaseOrder(
@@ -96,4 +96,14 @@ export function cancelPurchaseOrder(purchaseOrderId: string) {
       method: 'POST',
     },
   );
+}
+
+export function updatePurchaseOrder(
+  purchaseOrderId: string,
+  body: UpdatePurchaseOrderDto,
+) {
+  return apiFetch(`/procurement/purchase-order/${purchaseOrderId}`, {
+    method: 'PATCH',
+    body,
+  });
 }

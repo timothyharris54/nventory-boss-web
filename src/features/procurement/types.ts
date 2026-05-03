@@ -48,3 +48,12 @@ export type RunReplenishmentResponse = {
   createdRecommendations?: number;
   recommendations?: ReorderRecommendationRow[];
 };
+
+export type UpdatePurchaseOrderDto = {
+  expectedAt?: string | null;
+  notes?: string | null;
+  lines?: {
+    purchaseOrderLineId: string;
+    orderedQty: string;
+  }[];
+};

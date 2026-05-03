@@ -189,3 +189,12 @@ export type PurchaseOrderReceiptLine = {
     isActive: boolean;
   } | null;
 };
+
+export type UpdatePurchaseOrderDto = {
+  expectedAt?: string | null;
+  notes?: string | null;
+  lines?: {
+    purchaseOrderLineId: string;
+    orderedQty: string;
+  }[];
+}
