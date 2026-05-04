@@ -1,5 +1,7 @@
 import { apiFetch } from '../../lib/api/client';
 import type {
+  ConvertRecommendationsDto,
+  ProcurementVendor,
   ReorderRecommendationRow,
   RunReplenishmentRequest,
   RunReplenishmentResponse,
@@ -35,6 +37,10 @@ export async function getRecommendations(params?: {
   return apiFetch(`/planning/recommendations/all/${query ? `?${query}` : ''}`);
 }
 
+export function getVendors(): Promise<ProcurementVendor[]> {
+  return apiFetch<ProcurementVendor[]>('/vendors/allVendors');
+}
+
 export async function reviewRecommendation(id: string): Promise<void> {
   return apiFetch(`/planning/recommendations/${id}/review`, {
     method: 'PATCH',
@@ -47,9 +53,9 @@ export async function dismissRecommendation(id: string): Promise<void> {
   });
 }
 
-export function convertRecommendationsToPurchaseOrders(payload: {
-  recommendationIds: string[];
-}): Promise<unknown> {
+export function convertRecommendationsToPurchaseOrders(
+  payload: ConvertRecommendationsDto,
+): Promise<unknown> {
   return apiFetch('/procurement/recommendations/convert', {
     method: 'POST',
     body: payload,
@@ -107,3 +113,5 @@ export function updatePurchaseOrder(
     body,
   });
 }
+
+export * from './vendor-products-api';

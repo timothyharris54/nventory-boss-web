@@ -6,15 +6,7 @@ import { getProducts } from '../inventory/products-api';
 import type { ProductLookupItem } from '../inventory/product-types';
 import { LOCATION_OPTIONS } from '../inventory/locations';
 import { QuantityBadge } from '../../components/data-display/quantity-badge';
-
-function formatDate(value?: string) {
-  if (!value) return '—';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return date.toLocaleString();
-}
+import { formatDate } from '../../lib/utils/format-date';
 
 export default function LedgerPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductLookupItem | null>(null);

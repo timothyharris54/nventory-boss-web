@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { toast } from 'sonner';
-
 import {
   getRecommendations,
+  getVendorProducts,
   runReplenishment,
   reviewRecommendation,
   dismissRecommendation,
@@ -10,8 +11,8 @@ import {
 } from './api';
 
 import type { ReorderRecommendationRow } from './types';
-// Note: This page is intentionally basic and unstyled, as the replenishment engine 
-// is still in early stages and the UI will likely undergo significant changes.
+import type { VendorProduct } from './vendor-product-types';
+
 /*  Helper Functions */
 function getUrgency(days: string | null) {
   if (!days) return { label: '—', color: 'bg-slate-100 text-slate-600' };
@@ -28,7 +29,7 @@ function getUniqueLatestOpenActionableRows(rows: ReorderRecommendationRow[]) {
   const latestByProductLocation = new Map<string, ReorderRecommendationRow>();
 
   for (const row of rows) {
-    // if (row.status !== 'open') continue;
+    if (row.status !== 'open') continue;
     if (Number(row.recommendedQty) <= 0) continue;
 
     const key = `${row.productId}-${row.locationCode}`;
@@ -61,11 +62,34 @@ function formatNumber(val: string | null) {
 
 export default function RecommendationsPage() {
   const queryClient = useQueryClient();
-
+  const [quantityOverrides, setQuantityOverrides] = useState<Record<string, string>>({});
+  const [selectedRecommendationIds, setSelectedRecommendationIds] = useState<string[]>([]);
+  const [selectedVendorByRecommendationId, setSelectedVendorByRecommendationId] =
+            useState<Record<string, string>>({});
   const { data, isLoading } = useQuery<ReorderRecommendationRow[]>({
     queryKey: ['replenishment-open'],
     queryFn: () => getRecommendations(),
   });
+
+  const { data: vendorProducts = [] } = useQuery<VendorProduct[]>({
+    queryKey: ['vendor-products'],
+    queryFn: getVendorProducts,
+  });
+
+  const toggleSelectedRecommendation = (recommendationId: string) => {
+    setSelectedRecommendationIds((current) =>
+      current.includes(recommendationId)
+        ? current.filter((id) => id !== recommendationId)
+        : [...current, recommendationId],
+    );
+  };
+
+  const updateQty = (recommendationId: string, value: string) => {
+    setQuantityOverrides((current) => ({
+      ...current,
+      [recommendationId]: value,
+    }));
+  };
 
   const runMutation = useMutation({
     mutationFn: runReplenishment,
@@ -103,12 +127,15 @@ export default function RecommendationsPage() {
       );
     },
   });
-
   const convertMutation = useMutation({
     mutationFn: convertRecommendationsToPurchaseOrders,
     onSuccess: () => {
-      toast.success('Recommendation converted to purchase order.');
+      toast.success('Recommendations converted to purchase orders.');
+      setSelectedRecommendationIds([]);
+      setQuantityOverrides({});
+      setSelectedVendorByRecommendationId({});
       queryClient.invalidateQueries({ queryKey: ['replenishment-open'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
     },
     onError: (error) => {
       toast.error(
@@ -117,12 +144,88 @@ export default function RecommendationsPage() {
           : 'Failed to convert recommendation.',
       );
     },
-  });  
+  });
 
   /* Transform Layer  */
   // get only the latest open recommendation for each product/location, 
   // and only those with actionable recommended qtys
   const actionableRows = data ? getUniqueLatestOpenActionableRows(data) : [];
+
+  const selected = actionableRows.filter((r) =>
+    selectedRecommendationIds.includes(String(r.id)),
+  );
+
+  const getVendorOptions = (row: ReorderRecommendationRow) => {
+    const vendorsById = new Map<string, { id: string; name: string }>();
+
+    for (const vendorProduct of vendorProducts) {
+      if (vendorProduct.productId !== row.productId) continue;
+      if (!vendorProduct.isActive) continue;
+      if (!vendorProduct.vendor) continue;
+
+      vendorsById.set(vendorProduct.vendorId, {
+        id: vendorProduct.vendorId,
+        name: vendorProduct.vendor.name,
+      });
+    }
+
+    return Array.from(vendorsById.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  };
+
+  const getSelectedVendorId = (row: ReorderRecommendationRow) => {
+    const selectedVendorId = selectedVendorByRecommendationId[String(row.id)];
+    const matchingVendorIds = new Set(
+      getVendorOptions(row).map((vendor) => vendor.id),
+    );
+
+    if (selectedVendorId && matchingVendorIds.has(selectedVendorId)) {
+      return selectedVendorId;
+    }
+
+    if (row.vendorId && matchingVendorIds.has(row.vendorId)) {
+      return row.vendorId;
+    }
+
+    return '';
+  };
+
+  const selectedConvertibleRows = selected.filter((row) => getSelectedVendorId(row));
+
+  const hasSelectedNonConvertibleRows =
+    selected.length > selectedConvertibleRows.length;
+
+  const canConvertSelected =
+    selectedConvertibleRows.length > 0 && !convertMutation.isPending;
+
+  const handleConvertSelected = () => {
+    if (selectedConvertibleRows.length === 0) return;
+
+    convertMutation.mutate({
+      recommendations: selectedConvertibleRows.map((row) => ({
+        recommendationId: row.id,
+        vendorId: getSelectedVendorId(row),
+        quantity: quantityOverrides[row.id] ?? row.recommendedQty,
+      })),
+    });
+  };
+
+  const handleConvertOne = (row: ReorderRecommendationRow) => {
+    const vendorId = getSelectedVendorId(row);
+
+    if (!vendorId) return;
+
+    convertMutation.mutate({
+      recommendations: [
+        {
+          recommendationId: row.id,
+          vendorId,
+          quantity: quantityOverrides[row.id] ?? row.recommendedQty,
+        },
+      ],
+    });
+  };
 
   function handleRun() {
     runMutation.mutate({
@@ -134,14 +237,32 @@ export default function RecommendationsPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Replenishment Recommendations</h1>
+        <div className="flex items-center gap-3">
+          {hasSelectedNonConvertibleRows && (
+            <span className="text-sm text-amber-700">
+              Rows without vendors will be skipped.
+            </span>
+          )}
+          <button
+            type="button"
+            disabled={!canConvertSelected}
+            onClick={handleConvertSelected}
+            className="bg-green-700 px-4 py-2 text-white rounded disabled:opacity-50"
+          >
+            {convertMutation.isPending
+              ? 'Converting...'
+              : `Convert selected (${selectedConvertibleRows.length})`}
+          </button>
 
-        <button
-          onClick={handleRun}
-          disabled={runMutation.isPending}
-          className="bg-slate-900 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          {runMutation.isPending ? 'Running...' : 'Run Replenishment'}
-        </button>
+          <button
+            type="button"
+            onClick={handleRun}
+            disabled={runMutation.isPending}
+            className="bg-slate-900 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            {runMutation.isPending ? 'Running...' : 'Run Replenishment'}
+          </button>
+        </div>
       </div>
 
       {isLoading && <div>Loading...</div>}
@@ -150,6 +271,9 @@ export default function RecommendationsPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left">
               <tr>
+                <th className="px-4 py-3">
+                  <span className="sr-only">Select</span>
+                </th>
                 <th className="px-4 py-3">SKU</th>
                 <th className="px-4 py-3">Product</th>
                 <th className="px-4 py-3">Vendor</th>
@@ -168,16 +292,48 @@ export default function RecommendationsPage() {
                 const available = formatNumber(row.qtyAvailableSnapshot);
                 const avgDaily = formatNumber(row.avgDailySales30);
                 const reorderPoint = formatNumber(row.reorderPoint);
-                const recommendedQty = formatNumber(row.recommendedQty);
+                const quantity = quantityOverrides[row.id] ?? row.recommendedQty;
+                const vendorOptions = getVendorOptions(row);
+                const hasVendorOptions = vendorOptions.length > 0;
 
                 return (
                   <tr key={row.id} className="border-t">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedRecommendationIds.includes(String(row.id))}
+                        onChange={() => toggleSelectedRecommendation(String(row.id))}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                    </td>
+
                     <td className="px-4 py-3">{row.product?.sku ?? '—'}</td>
 
                     <td className="px-4 py-3">{row.product?.name ?? '—'}</td>
 
                     <td className="px-4 py-3">
-                      {row.vendor?.name ?? '—'}
+                      <select
+                        value={getSelectedVendorId(row)}
+                        onChange={(event) =>
+                          setSelectedVendorByRecommendationId((current) => ({
+                            ...current,
+                            [String(row.id)]: event.target.value,
+                          }))
+                        }
+                        disabled={!hasVendorOptions}
+                        className="rounded-md border px-2 py-1 text-sm"
+                      >
+                        <option value="">
+                          {hasVendorOptions
+                            ? 'Select vendor'
+                            : 'No matching vendors'}
+                        </option>
+                        {vendorOptions.map((vendor) => (
+                          <option key={vendor.id} value={vendor.id}>
+                            {vendor.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
 
                     <td className="px-4 py-3 text-right">
@@ -192,8 +348,15 @@ export default function RecommendationsPage() {
                       {reorderPoint}
                     </td>
 
-                    <td className="px-4 py-3 text-right font-semibold">
-                      {recommendedQty}
+                    <td className="px-4 py-3 text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={quantity}
+                        onChange={(event) => updateQty(row.id, event.target.value)}
+                        className="w-24 rounded border border-slate-300 px-2 py-1 text-right"
+                      />
                     </td>
 
                     <td className="px-4 py-3">
@@ -208,7 +371,11 @@ export default function RecommendationsPage() {
                       <button
                         type="button"
                         onClick={() => reviewMutation.mutate(row.id)}
-                        disabled={reviewMutation.isPending || dismissMutation.isPending}
+                        disabled={
+                          reviewMutation.isPending ||
+                          dismissMutation.isPending ||
+                          convertMutation.isPending
+                        }
                         className="text-blue-600 disabled:opacity-50"
                       >
                         Review
@@ -217,25 +384,23 @@ export default function RecommendationsPage() {
                       <button
                         type="button"
                         onClick={() => dismissMutation.mutate(row.id)}
-                        disabled={reviewMutation.isPending || dismissMutation.isPending}
+                        disabled={
+                          reviewMutation.isPending ||
+                          dismissMutation.isPending ||
+                          convertMutation.isPending
+                        }
                         className="text-slate-500 disabled:opacity-50"
                       >
                         Dismiss
                       </button>
-              {row.vendorId && (
                       <button
                         type="button"
-                        disabled={!row.vendorId || convertMutation.isPending}
-                        onClick={() =>
-                          convertMutation.mutate({
-                            recommendationIds: [row.id],
-                          })
-                        }
+                        disabled={!getSelectedVendorId(row) || convertMutation.isPending}
+                        onClick={() => handleConvertOne(row)}
                         className="text-green-700 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Convert to PO
                       </button>
-              )}
                     </td>
                   </tr>
                 );
