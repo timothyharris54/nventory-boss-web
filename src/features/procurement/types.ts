@@ -49,11 +49,33 @@ export type RunReplenishmentResponse = {
   recommendations?: ReorderRecommendationRow[];
 };
 
+export type ConvertRecommendationsDto = {
+  recommendations: {
+    recommendationId: string;
+    vendorId?: string;
+    quantity: string;
+  }[];
+};
+
+export type ProcurementVendor = {
+  id: string;
+  name: string;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  defaultLeadTimeDays: number | null;
+  paymentTerms: string | null;
+  isActive: boolean;
+  isPreferred?: boolean;
+  notes: string | null;
+};
+
 export type UpdatePurchaseOrderDto = {
   expectedAt?: string | null;
   notes?: string | null;
   lines?: {
     purchaseOrderLineId: string;
     orderedQty: string;
+    vendorId?: string;
   }[];
 };

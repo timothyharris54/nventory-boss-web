@@ -4,8 +4,8 @@ import { cancelPurchaseOrder } from './api';
 import { toast } from 'sonner';
 import { useState, type ComponentType, type ReactNode } from 'react';
 import { EditPurchaseOrderModal } from './edit-purchase-order-modal';
-import { updatePurchaseOrder } from './api';
 import type { PurchaseOrderDetail, UpdatePurchaseOrderDto } from './purchase-order-types';
+import { formatDate } from '../../lib/utils/format-date';
 
 type Props = {
   purchaseOrderId: string;
@@ -58,6 +58,20 @@ export function PurchaseOrderDetailPanel({
       toast.error('Unable to cancel purchase order.');
     },
   });
+  const totalOrdered = purchaseOrder?.lines.reduce(
+    (sum, line) => sum + Number(line.orderedQty),
+    0,
+  );
+
+  const totalReceived = purchaseOrder?.lines.reduce(
+    (sum, line) => sum + Number(line.receivedQty ?? 0),
+    0,
+  );
+  
+  const percentReceived =
+    totalOrdered! > 0
+      ? Math.round((totalReceived! / totalOrdered!) * 100)
+      : 0;
 
   const handleCancel = () => {
     const confirmed = window.confirm(
@@ -173,6 +187,21 @@ export function PurchaseOrderDetailPanel({
                 : '—'}
             </p>
           </div>
+          <div className='w-full'>
+            <div className="mt-3 space-y-1 text-sm">
+              <p>
+                <span className="font-medium">{totalReceived ? totalReceived : 0}</span> of{' '}
+                <span className="font-medium">{totalOrdered}</span> units received
+              </p>
+
+              <div className="h-2 w-full rounded-full bg-gray-200">
+                <div
+                  className="h-2 rounded-full bg-gray-900"
+                  style={{ width: `${percentReceived}%` }}
+                />
+              </div>
+            </div>                      
+          </div>
         </div>
       </DetailSection>
       <DetailSection title="Line Items">
@@ -221,48 +250,47 @@ export function PurchaseOrderDetailPanel({
           </p>
         ) : (
           <div className="space-y-3">
-            {purchaseOrder?.receipts.map((receipt) => (
-              <div key={receipt.id} className="rounded-lg border p-4">
-                <div className="mb-3 flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-medium">
+            {purchaseOrder?.receipts.map((receipt) => {
+              const receiptQty =
+                receipt.lines?.reduce(
+                  (sum, line) => sum + Number(line.receivedQty),
+                  0,
+                ) ?? 0;
+
+              return (
+                <div key={receipt.id} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">
                       {new Date(receipt.receivedAt).toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Location: {receipt.locationCode}
-                    </p>
+                    </span>
+
+                    <span className="text-gray-500">
+                      Receipt #{receipt.id}
+                    </span>
                   </div>
 
-                  <p className="text-xs text-gray-400">
-                    Receipt #{receipt.id}
-                  </p>
+                  {receipt.notes && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      {receipt.notes}
+                    </p>
+                  )}
+                  <div className="mt-4 text-xs text-gray-500 space-y-1">
+                    <p>Ordered: {formatDate(purchaseOrder.orderedAt)}</p>
+                    {purchaseOrder.submittedAt && (
+                      <p>Submitted: {formatDate(purchaseOrder.submittedAt)}</p>
+                    )}
+                    {purchaseOrder.cancelledAt && (
+                      <p className="text-red-600">
+                        Cancelled: {formatDate(purchaseOrder.cancelledAt)}
+                      </p>
+                    )}
+                  </div>                  
+                  <div className="mt-2 text-xs text-gray-500">
+                    Received {receiptQty} units
+                  </div>
                 </div>
-
-                {receipt.notes && (
-                  <p className="mb-3 text-sm text-gray-600">
-                    {receipt.notes}
-                  </p>
-                )}
-
-                {'lines' in receipt && Array.isArray(receipt.lines) && (
-                  <div className="rounded-md bg-gray-50 p-3">
-                    {receipt.lines.map((line) => (
-                      <div
-                        key={line.id}
-                        className="flex justify-between py-1 text-sm"
-                      >
-                        <span>
-                          {line.product?.name ?? `Product ${line.productId}`}
-                        </span>
-                        <span className="font-medium">
-                          {line.receivedQty}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}          
           </div>
         )}
       </DetailSection>      

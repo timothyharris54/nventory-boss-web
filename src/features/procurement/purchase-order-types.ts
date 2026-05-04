@@ -196,5 +196,6 @@ export type UpdatePurchaseOrderDto = {
   lines?: {
     purchaseOrderLineId: string;
     orderedQty: string;
+    vendorId?: string;
   }[];
-}
+};

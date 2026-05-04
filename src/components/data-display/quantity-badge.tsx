@@ -1,4 +1,4 @@
-import { formatQty, toNumber } from '../../lib/utils/quantity.js';
+import { formatQty, toNumber } from '../../lib/utils/quantity';
 
 type Props = {
   value: string | number;
