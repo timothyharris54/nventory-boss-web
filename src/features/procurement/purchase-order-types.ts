@@ -62,6 +62,14 @@ export type PurchaseOrderRow = {
     receivedAt: string;
     notes: string | null;
   }>;
+  
+  purchaseOrderId?: string | null;
+  purchaseOrderLineId?: string | null;
+  purchaseOrder?: {
+    id: string;
+    poNumber: string;
+    status: string;
+  } | null;  
 };
 
 export type ReceivePurchaseOrderDto = {

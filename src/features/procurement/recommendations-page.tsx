@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import {
   getRecommendations,
+  getAllRecommendations,  
   getVendorProducts,
   runReplenishment,
   reviewRecommendation,
@@ -12,6 +13,7 @@ import {
 
 import type { ReorderRecommendationRow } from './types';
 import type { VendorProduct } from './vendor-product-types';
+import { PurchaseOrderDetailPanel } from './purchase-order-detail-panel';
 
 /*  Helper Functions */
 function getUrgency(days: string | null) {
@@ -66,10 +68,28 @@ export default function RecommendationsPage() {
   const [selectedRecommendationIds, setSelectedRecommendationIds] = useState<string[]>([]);
   const [selectedVendorByRecommendationId, setSelectedVendorByRecommendationId] =
             useState<Record<string, string>>({});
-  const { data, isLoading } = useQuery<ReorderRecommendationRow[]>({
-    queryKey: ['replenishment-open'],
-    queryFn: () => getRecommendations(),
+  const [detailPurchaseOrderId, setDetailPurchaseOrderId] = useState<string | null>(null);            
+  const [recommendationView, setRecommendationView] =
+    useState<'needs_action' | 'history'>('needs_action');  
+
+    const { data, isLoading } = useQuery<ReorderRecommendationRow[]>({
+    queryKey: ['replenishment-recommendations', recommendationView],
+    queryFn: () =>
+      recommendationView === 'history'
+        ? getAllRecommendations()
+        : getRecommendations(),
   });
+
+  const navigateToPurchaseOrder = (row: ReorderRecommendationRow) => {
+    const purchaseOrderId = row.purchaseOrderId ?? row.purchaseOrder?.id;
+
+    if (!purchaseOrderId) {
+      toast.error('No purchase order is linked to this recommendation.');
+      return;
+    }
+
+    setDetailPurchaseOrderId(purchaseOrderId);
+  };
 
   const { data: vendorProducts = [] } = useQuery<VendorProduct[]>({
     queryKey: ['vendor-products'],
@@ -149,8 +169,16 @@ export default function RecommendationsPage() {
   /* Transform Layer  */
   // get only the latest open recommendation for each product/location, 
   // and only those with actionable recommended qtys
-  const actionableRows = data ? getUniqueLatestOpenActionableRows(data) : [];
+  
+  const rows = data ?? [];
 
+  const actionableRows =
+  recommendationView === 'needs_action'
+    ? getUniqueLatestOpenActionableRows(rows)
+    : rows.filter((row) =>
+        ['converted', 'dismissed', 'superseded'].includes(row.status),
+      );
+        
   const selected = actionableRows.filter((r) =>
     selectedRecommendationIds.includes(String(r.id)),
   );
@@ -237,23 +265,56 @@ export default function RecommendationsPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Replenishment Recommendations</h1>
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setRecommendationView('needs_action');
+              setSelectedRecommendationIds([]);
+            }}
+            className={`rounded-full border px-3 py-1.5 text-sm ${
+              recommendationView === 'needs_action'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Needs Action
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setRecommendationView('history');
+              setSelectedRecommendationIds([]);
+            }}
+            className={`rounded-full border px-3 py-1.5 text-sm ${
+              recommendationView === 'history'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            History
+          </button>
+        </div>        
         <div className="flex items-center gap-3">
           {hasSelectedNonConvertibleRows && (
             <span className="text-sm text-amber-700">
               Rows without vendors will be skipped.
             </span>
           )}
-          <button
-            type="button"
-            disabled={!canConvertSelected}
-            onClick={handleConvertSelected}
-            className="bg-green-700 px-4 py-2 text-white rounded disabled:opacity-50"
-          >
-            {convertMutation.isPending
-              ? 'Converting...'
-              : `Convert selected (${selectedConvertibleRows.length})`}
-          </button>
 
+          {recommendationView === 'needs_action' && (
+              <button
+                type="button"
+                disabled={!canConvertSelected}
+                onClick={handleConvertSelected}
+                className="bg-green-700 px-4 py-2 text-white rounded disabled:opacity-50"
+              >
+                {convertMutation.isPending
+                  ? 'Converting...'
+                  : `Convert selected (${selectedConvertibleRows.length})`}
+              </button>
+          )}
           <button
             type="button"
             onClick={handleRun}
@@ -299,12 +360,14 @@ export default function RecommendationsPage() {
                 return (
                   <tr key={row.id} className="border-t">
                     <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedRecommendationIds.includes(String(row.id))}
-                        onChange={() => toggleSelectedRecommendation(String(row.id))}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
+                      { recommendationView === 'needs_action' && (
+                        <input
+                          type="checkbox"
+                          checked={selectedRecommendationIds.includes(String(row.id))}
+                          onChange={() => toggleSelectedRecommendation(String(row.id))}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      )}
                     </td>
 
                     <td className="px-4 py-3">{row.product?.sku ?? '—'}</td>
@@ -349,14 +412,18 @@ export default function RecommendationsPage() {
                     </td>
 
                     <td className="px-4 py-3 text-right">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={quantity}
-                        onChange={(event) => updateQty(row.id, event.target.value)}
-                        className="w-24 rounded border border-slate-300 px-2 py-1 text-right"
-                      />
+                      {recommendationView === 'needs_action' ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={quantity}
+                          onChange={(event) => updateQty(row.id, event.target.value)}
+                          className="w-24 rounded border border-slate-300 px-2 py-1 text-right"
+                        />
+                      ) : (
+                        <span>{quantity}</span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3">
@@ -368,6 +435,8 @@ export default function RecommendationsPage() {
                     </td>
 
                     <td className="px-4 py-3 space-x-2">
+                      {row.status !== 'converted' ? (
+                      <>
                       <button
                         type="button"
                         onClick={() => reviewMutation.mutate(row.id)}
@@ -399,8 +468,26 @@ export default function RecommendationsPage() {
                         onClick={() => handleConvertOne(row)}
                         className="text-green-700 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        Convert to PO
+                      Convert to PO
                       </button>
+                      </>
+                      ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigateToPurchaseOrder(row)}
+                        className="text-sm font-medium text-gray-900 hover:underline"
+                      >
+                        View PO
+                      </button>                      
+                      )}
+                  {recommendationView === 'history' &&
+                    row.status === 'converted' &&
+                    row.id && (
+                      <div className="mt-2 text-sm text-green-700">
+                        Converted to PO #{row.id}
+                      </div>
+                    )}                    
+
                     </td>
                   </tr>
                 );
@@ -408,6 +495,12 @@ export default function RecommendationsPage() {
             </tbody>
           </table>
         </div>
+      )}
+      {detailPurchaseOrderId && (
+        <PurchaseOrderDetailPanel
+          purchaseOrderId={detailPurchaseOrderId}
+          onClose={() => setDetailPurchaseOrderId(null)}
+        />
       )}
     </div>
   );
