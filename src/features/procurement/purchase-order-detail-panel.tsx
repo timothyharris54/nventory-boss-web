@@ -250,47 +250,56 @@ export function PurchaseOrderDetailPanel({
           </p>
         ) : (
           <div className="space-y-3">
-            {purchaseOrder?.receipts.map((receipt) => {
-              const receiptQty =
-                receipt.lines?.reduce(
-                  (sum, line) => sum + Number(line.receivedQty),
-                  0,
-                ) ?? 0;
+          {purchaseOrder?.receipts.map((receipt) => {
+            const receiptQty = receipt.lines.reduce(
+              (sum, line) => sum + Number(line.receivedQty),
+              0,
+            );
 
-              return (
-                <div key={receipt.id} className="rounded-lg border p-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">
+            return (
+              <div key={receipt.id} className="rounded-lg border p-4">
+                <div className="mb-2 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-medium">
                       {new Date(receipt.receivedAt).toLocaleString()}
-                    </span>
-
-                    <span className="text-gray-500">
-                      Receipt #{receipt.id}
-                    </span>
-                  </div>
-
-                  {receipt.notes && (
-                    <p className="mt-1 text-sm text-gray-600">
-                      {receipt.notes}
                     </p>
-                  )}
-                  <div className="mt-4 text-xs text-gray-500 space-y-1">
-                    <p>Ordered: {formatDate(purchaseOrder.orderedAt)}</p>
-                    {purchaseOrder.submittedAt && (
-                      <p>Submitted: {formatDate(purchaseOrder.submittedAt)}</p>
-                    )}
-                    {purchaseOrder.cancelledAt && (
-                      <p className="text-red-600">
-                        Cancelled: {formatDate(purchaseOrder.cancelledAt)}
-                      </p>
-                    )}
-                  </div>                  
-                  <div className="mt-2 text-xs text-gray-500">
-                    Received {receiptQty} units
+
+                    <p className="text-sm text-gray-500">
+                      Received {receiptQty} units · {receipt.lines.length} line
+                      {receipt.lines.length === 1 ? '' : 's'}
+                    </p>
                   </div>
+
+                  <p className="text-xs text-gray-400">
+                    Receipt #{receipt.id}
+                  </p>
                 </div>
-              );
-            })}          
+
+                {receipt.notes && (
+                  <p className="mb-3 text-sm text-gray-600">
+                    {receipt.notes}
+                  </p>
+                )}
+
+                <div className="rounded-md bg-gray-50 p-3">
+                  {receipt.lines.map((line) => (
+                    <div
+                      key={line.id}
+                      className="flex justify-between py-1 text-sm"
+                    >
+                      <span>
+                        {line.product?.name ?? `Product ${line.productId}`}
+                      </span>
+
+                      <span className="font-medium">
+                        {line.receivedQty}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
           </div>
         )}
       </DetailSection>      

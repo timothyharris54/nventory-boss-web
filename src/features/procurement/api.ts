@@ -114,4 +114,9 @@ export function updatePurchaseOrder(
   });
 }
 
+export function getAllRecommendations() {
+  return apiFetch<ReorderRecommendationRow[]>(
+    '/planning/recommendations/all',
+  );
+}
 export * from './vendor-products-api';

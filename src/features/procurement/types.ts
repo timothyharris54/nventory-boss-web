@@ -37,6 +37,13 @@ export type ReorderRecommendationRow = {
     id: string;
     name: string;
   };
+  purchaseOrderId?: string | null;
+  purchaseOrderLineId?: string | null;
+  purchaseOrder?: {
+    id: string;
+    poNumber: string;
+    status: string;
+  } | null;    
 };
 
 export type RunReplenishmentRequest = {
