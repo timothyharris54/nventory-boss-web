@@ -36,4 +36,10 @@ export type CreateVendorProductDto = {
   isActive?: boolean;
 };
 
-export type UpdateVendorProductDto = Partial<CreateVendorProductDto>;
+export type UpdateVendorProductDto = Partial<
+  Omit<CreateVendorProductDto, 'vendorSku' | 'unitCost' | 'leadTimeDays'>
+> & {
+  vendorSku?: string | null;
+  unitCost?: string | null;
+  leadTimeDays?: number | null;
+};

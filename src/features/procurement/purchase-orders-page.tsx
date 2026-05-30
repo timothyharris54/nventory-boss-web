@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import { getPurchaseOrders, submitPurchaseOrder } from './api';
 import type { PurchaseOrderRow } from './purchase-order-types';
@@ -12,11 +13,14 @@ import { getPurchaseOrderHealth } from './shared/utils';
 
 export default function PurchaseOrdersPage() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryPurchaseOrderId =
+    searchParams.get('purchaseOrderId') ?? searchParams.get('poId');
 
   const [receivingPurchaseOrder, setReceivingPurchaseOrder] =
     useState<PurchaseOrderRow | null>(null);
   const [detailPurchaseOrderId, setDetailPurchaseOrderId] =
-    useState<string | null>(null);
+    useState<string | null>(queryPurchaseOrderId);
   const [historyPurchaseOrderId, setHistoryPurchaseOrderId] =
     useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -24,10 +28,43 @@ export default function PurchaseOrdersPage() {
   const [sortBy, setSortBy] = useState<
     'attention' | 'newest' | 'oldest' | 'expected_soon' | 'vendor'
   >('attention');
-  const [selectedPurchaseOrderIds, setSelectedPurchaseOrderIds] = useState<string[]>([]);
-  useEffect(() => {
-    setSelectedPurchaseOrderIds([]);
-  }, [statusFilter, searchText, sortBy]);   
+  const [selectedPurchaseOrderIds, setSelectedPurchaseOrderIds] = useState<
+    string[]
+  >(queryPurchaseOrderId ? [queryPurchaseOrderId] : []);
+  const activeDetailPurchaseOrderId =
+    queryPurchaseOrderId ?? detailPurchaseOrderId;
+  const activeSelectedPurchaseOrderIds =
+    queryPurchaseOrderId &&
+    !selectedPurchaseOrderIds.includes(queryPurchaseOrderId)
+      ? [queryPurchaseOrderId, ...selectedPurchaseOrderIds]
+      : selectedPurchaseOrderIds;
+
+  const handleViewDetails = (purchaseOrderId: string | null) => {
+    if (!purchaseOrderId) return;
+
+    setDetailPurchaseOrderId(purchaseOrderId);
+    setSelectedPurchaseOrderIds((current) =>
+      current.includes(purchaseOrderId) ? current : [...current, purchaseOrderId],
+    );
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('purchaseOrderId', purchaseOrderId);
+      next.delete('poId');
+
+      return next;
+    });
+  };
+
+  const handleCloseDetails = () => {
+    setDetailPurchaseOrderId(null);
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('purchaseOrderId');
+      next.delete('poId');
+
+      return next;
+    });
+  };
 
   function getFilterCount(value: string) {
     if (value === 'all') return purchaseOrders?.length ?? 0;
@@ -204,7 +241,10 @@ export default function PurchaseOrdersPage() {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setStatusFilter(option.value)}
+                    onClick={() => {
+                      setStatusFilter(option.value);
+                      setSelectedPurchaseOrderIds([]);
+                    }}
                     className={`rounded-full border px-3 py-1.5 text-sm ${
                       isActive
                         ? 'bg-gray-900 text-white'
@@ -223,7 +263,10 @@ export default function PurchaseOrdersPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <select
                 value={sortBy}
-                onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+                onChange={(event) => {
+                  setSortBy(event.target.value as typeof sortBy);
+                  setSelectedPurchaseOrderIds([]);
+                }}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm"
               >
                 <option value="attention">Needs attention first</option>
@@ -235,7 +278,10 @@ export default function PurchaseOrdersPage() {
               <input
                 type="search"
                 value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
+                onChange={(event) => {
+                  setSearchText(event.target.value);
+                  setSelectedPurchaseOrderIds([]);
+                }}
                 placeholder="Search POs, vendors, status, location..."
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm sm:max-w-md"
               />
@@ -256,6 +302,7 @@ export default function PurchaseOrdersPage() {
               setStatusFilter('all');
               setSearchText('');
               setSortBy('attention');
+              setSelectedPurchaseOrderIds([]);
             }}
             className="font-medium text-gray-900 hover:underline"
           >
@@ -309,9 +356,9 @@ export default function PurchaseOrdersPage() {
             </button>
           </div>
 
-          {selectedPurchaseOrderIds.length > 0 && (
+          {activeSelectedPurchaseOrderIds.length > 0 && (
             <span className="text-gray-500">
-              {selectedPurchaseOrderIds.length} selected
+              {activeSelectedPurchaseOrderIds.length} selected
             </span>
           )}
         </div>
@@ -319,10 +366,10 @@ export default function PurchaseOrdersPage() {
 
       {!isLoading && filteredPurchaseOrders && filteredPurchaseOrders.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          {selectedPurchaseOrderIds.length > 0 && (
+          {activeSelectedPurchaseOrderIds.length > 0 && (
             <div className="rounded-lg border bg-gray-50 px-4 py-3 text-sm">
-              {selectedPurchaseOrderIds.length} purchase order
-              {selectedPurchaseOrderIds.length === 1 ? '' : 's'} selected
+              {activeSelectedPurchaseOrderIds.length} purchase order
+              {activeSelectedPurchaseOrderIds.length === 1 ? '' : 's'} selected
             </div>
           )}                   
           <div className="grid gap-4 p-4">
@@ -330,9 +377,9 @@ export default function PurchaseOrdersPage() {
               <PurchaseOrderCard
                 key={po.id}
                 po={po}
-                isSelected={selectedPurchaseOrderIds.includes(String(po.id))}
+                isSelected={activeSelectedPurchaseOrderIds.includes(String(po.id))}
                 onToggleSelected={toggleSelectedPurchaseOrder}
-                onViewDetails={() => setDetailPurchaseOrderId(po.id ? String(po.id) : null)}
+                onViewDetails={() => handleViewDetails(po.id ? String(po.id) : null)}
                 onReceive={() => setReceivingPurchaseOrder(po)}
                 onSubmit={() => submitMutation.mutate({
                   id: po.id,
@@ -356,10 +403,10 @@ export default function PurchaseOrdersPage() {
           onClose={() => setHistoryPurchaseOrderId(null)}
         />
       )}
-      {detailPurchaseOrderId && (
+      {activeDetailPurchaseOrderId && (
         <PurchaseOrderDetailPanel
-          purchaseOrderId={detailPurchaseOrderId}
-          onClose={() => setDetailPurchaseOrderId(null)}
+          purchaseOrderId={activeDetailPurchaseOrderId}
+          onClose={handleCloseDetails}
         />
       )}      
     </div>

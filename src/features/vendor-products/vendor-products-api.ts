@@ -25,13 +25,15 @@ export function getVendorProductById(
   );
 }
 
-export function getVendorProductByProductId(
+export function getVendorProductsByProductId(
   productId: string,
-): Promise<VendorProduct> {
-  return apiFetch<VendorProduct>(
+): Promise<VendorProduct[]> {
+  return apiFetch<VendorProduct[]>(
     `/vendor-products/product/${productId}`,
   );
 }
+
+export const getVendorProductByProductId = getVendorProductsByProductId;
 
 export function createVendorProduct(
   body: CreateVendorProductDto,
@@ -47,7 +49,7 @@ export function updateVendorProduct(
   body: UpdateVendorProductDto,
 ): Promise<VendorProduct> {
   return apiFetch<VendorProduct>(
-    `/vendor-product/${vendorProductId}`,
+    `/vendor-products/${vendorProductId}`,
     {
       method: 'PATCH',
       body,
@@ -59,7 +61,7 @@ export function deleteVendorProduct(
   vendorProductId: string,
 ): Promise<VendorProduct> {
   return apiFetch<VendorProduct>(
-    `/vendors/vendor-product/${vendorProductId}`,
+    `/vendor-products/${vendorProductId}`,
     {
       method: 'DELETE',
     },

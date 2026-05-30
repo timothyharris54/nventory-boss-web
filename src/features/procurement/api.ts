@@ -119,4 +119,4 @@ export function getAllRecommendations() {
     '/planning/recommendations/all',
   );
 }
-export * from './vendor-products-api';
+export * from '../vendor-products/vendor-products-api';

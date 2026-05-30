@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -12,8 +13,8 @@ import {
 } from './api';
 
 import type { ReorderRecommendationRow } from './types';
-import type { VendorProduct } from './vendor-product-types';
-import { PurchaseOrderDetailPanel } from './purchase-order-detail-panel';
+import type { VendorProduct } from '../vendor-products/vendor-product-types';
+import { routes } from '../../lib/constants/routes';
 
 /*  Helper Functions */
 function getUrgency(days: string | null) {
@@ -64,11 +65,11 @@ function formatNumber(val: string | null) {
 
 export default function RecommendationsPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [quantityOverrides, setQuantityOverrides] = useState<Record<string, string>>({});
   const [selectedRecommendationIds, setSelectedRecommendationIds] = useState<string[]>([]);
   const [selectedVendorByRecommendationId, setSelectedVendorByRecommendationId] =
             useState<Record<string, string>>({});
-  const [detailPurchaseOrderId, setDetailPurchaseOrderId] = useState<string | null>(null);            
   const [recommendationView, setRecommendationView] =
     useState<'needs_action' | 'history'>('needs_action');  
 
@@ -88,7 +89,9 @@ export default function RecommendationsPage() {
       return;
     }
 
-    setDetailPurchaseOrderId(purchaseOrderId);
+    navigate(
+      `${routes.purchaseOrders}?purchaseOrderId=${encodeURIComponent(purchaseOrderId)}`,
+    );
   };
 
   const { data: vendorProducts = [] } = useQuery<VendorProduct[]>({
@@ -495,12 +498,6 @@ export default function RecommendationsPage() {
             </tbody>
           </table>
         </div>
-      )}
-      {detailPurchaseOrderId && (
-        <PurchaseOrderDetailPanel
-          purchaseOrderId={detailPurchaseOrderId}
-          onClose={() => setDetailPurchaseOrderId(null)}
-        />
       )}
     </div>
   );

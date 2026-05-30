@@ -2,15 +2,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPurchaseOrderById } from './api';
 import { cancelPurchaseOrder } from './api';
 import { toast } from 'sonner';
-import { useState, type ComponentType, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { EditPurchaseOrderModal } from './edit-purchase-order-modal';
-import type { PurchaseOrderDetail, UpdatePurchaseOrderDto } from './purchase-order-types';
-import { formatDate } from '../../lib/utils/format-date';
+import type { PurchaseOrderDetail } from './purchase-order-types';
 
 type Props = {
   purchaseOrderId: string;
   onClose: () => void;
 };
+
+function DetailSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border bg-white p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
 
 export function PurchaseOrderDetailPanel({
   purchaseOrderId,
@@ -18,9 +34,6 @@ export function PurchaseOrderDetailPanel({
 }: Props) {
   const {
     data: purchaseOrder,
-    isLoading,
-    isError,
-    error,
   } = useQuery({
     queryKey: ['purchase-order', purchaseOrderId],
     queryFn: () => getPurchaseOrderById(purchaseOrderId),
@@ -28,19 +41,7 @@ export function PurchaseOrderDetailPanel({
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const queryClient = useQueryClient();
-  //console.log('PurchaseOrderDetailPanel po status {0}', purchaseOrder?.status);
-  let lifeCycleStatus = 'Unknown';
-  if (purchaseOrder?.status === 'draft') {
-    lifeCycleStatus = 'Draft';
-  } else if (purchaseOrder?.status === 'submitted') {
-    lifeCycleStatus = 'Draft -> Submitted';
-  } else if (purchaseOrder?.status === 'partially_received') {
-    lifeCycleStatus = 'Draft -> Submitted -> Partially Received';
-  } else if (purchaseOrder?.status === 'received') {
-    lifeCycleStatus = 'Draft -> Submitted -> Partially Received -> Received';
-  } else if (purchaseOrder?.status === 'cancelled') {
-    lifeCycleStatus = 'Cancelled';
-  }
+
   const cancelPurchaseOrderMutation = useMutation({
     mutationFn: (id: string) => cancelPurchaseOrder(id),
 
@@ -84,23 +85,6 @@ export function PurchaseOrderDetailPanel({
       cancelPurchaseOrderMutation.mutate(purchaseOrder.id);
     }
   };
-    
-  function DetailSection({
-    title,
-    children,
-  }: {
-    title: string;
-    children: ReactNode;
-  }) {
-    return (
-      <section className="rounded-xl border bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-sm font-semibold text-gray-900">
-          {title}
-        </h3>
-        {children}
-      </section>
-    );
-  }  
   return (
 <div className="fixed inset-0 z-50 flex justify-end">
   <div
@@ -127,34 +111,39 @@ export function PurchaseOrderDetailPanel({
             </p>
           )}
         </div>
-        <div className="flex items-right gap-3">
-      {purchaseOrder?.status === 'draft' && (
-        <button
-          type="button"
-          onClick={() => setIsEditModalOpen(true)}
-          className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-        >
-          Edit Draft
-        </button>
-      )}          
-      {(purchaseOrder?.status === 'draft' ||
-          purchaseOrder?.status === 'submitted') && (
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-3">
+        {purchaseOrder?.status === 'draft' && (
           <button
             type="button"
-            onClick={handleCancel}
-            disabled={cancelPurchaseOrderMutation.isPending}
-            className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
-          >
-            {cancelPurchaseOrderMutation.isPending ? 'Cancelling...' : 'Cancel PO'}
-          </button>
-        )}
-          <button
-            type="button"
-            onClick={onClose}
+            onClick={() => setIsEditModalOpen(true)}
             className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
           >
-            Close
+            Edit Draft
           </button>
+        )}          
+        {(purchaseOrder?.status === 'draft' ||
+            purchaseOrder?.status === 'submitted') && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={cancelPurchaseOrderMutation.isPending}
+              className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            >
+              {cancelPurchaseOrderMutation.isPending ? 'Cancelling...' : 'Cancel PO'}
+            </button>
+          )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Close
+            </button>
+          </div>
+          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+            Created from Replenishment Recommendation
+          </span>
         </div>    
       </div>
     </div>
