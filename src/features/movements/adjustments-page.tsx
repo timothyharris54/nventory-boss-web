@@ -4,20 +4,9 @@ import { getProducts } from '../inventory/products-api';
 import type { ProductLookupItem } from '../inventory/product-types';
 import { LOCATION_OPTIONS } from '../inventory/locations';
 import { createInventoryAdjustment } from './api';
-import type { CreateAdjustmentRequest, 
-              InventoryAdjustmentFilters 
-            } from './adjustments-types';
+import type { CreateAdjustmentRequest } from './adjustments-types';
 import { toast } from 'sonner';
 import { ADJUSTMENT_REASON_CODE_OPTIONS } from './reason-code-types';
-
-function formatDate(value?: string) {
-  if (!value) return '—';
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return date.toLocaleString();
-}
 
 export default function AdjustmentsPage() {
   const queryClient = useQueryClient();
@@ -28,20 +17,10 @@ export default function AdjustmentsPage() {
   );
 
   const [quantityInput, setQuantityInput] = useState('');
-  const [sourceIdInput, setSourceIdInput] = useState('');
   const [notesInput, setNotesInput] = useState('');
   const [reasonCodeInput, setReasonCodeInput] = useState(
     ADJUSTMENT_REASON_CODE_OPTIONS[0]?.value ?? ''
   );
-
-  const AdjustmentFilters: InventoryAdjustmentFilters | null =
-    selectedProduct && locationCodeInput
-      ? {
-          productId: selectedProduct.id,
-          locationCode: locationCodeInput,
-          take: 50,
-        }
-      : null;
 
   const {
     data: products,
@@ -301,14 +280,14 @@ export default function AdjustmentsPage() {
               htmlFor="AdjustmentNotes"
               className="mb-1 block text-sm font-medium text-slate-700"
             >
-              Notes
+              Notes <span className="text-red-500">*</span>
             </label>
             <textarea
               id="AdjustmentNotes"
               value={notesInput}
               onChange={(e) => setNotesInput(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-slate-500"
-              placeholder="Optional notes"
+              placeholder="Reqired notes"
               rows={3}
             />
           </div>

@@ -8,4 +8,6 @@ export const routes = {
   transfers: '/movements/transfers',
   recommendations: '/procurement/recommendations',
   purchaseOrders: '/procurement/purchase-orders',
+  vendorProducts: '/vendor-products',
+  users: '/users',
 } as const;
