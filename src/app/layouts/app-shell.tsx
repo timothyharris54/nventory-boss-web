@@ -9,6 +9,12 @@ type NavItem = {
   allowedRoles?: string[];
 };
 
+type NavSection = {
+  label?: string;
+  items: NavItem[];
+  allowedRoles?: string[];
+};
+
 const navItems: NavItem[] = [
   { to: routes.dashboard, label: 'Dashboard' },
   { to: routes.inventory, label: 'Inventory' },
@@ -19,7 +25,17 @@ const navItems: NavItem[] = [
   { to: routes.recommendations, label: 'Recommendations' },
   { to: routes.purchaseOrders, label: 'Purchase Orders' },
   { to: routes.vendorProducts, label: 'Vendor Products' },
-  { to: routes.users, label: 'User Maintenance', allowedRoles: ['system_admin'] },
+];
+
+const navSections: NavSection[] = [
+  { items: navItems },
+  {
+    label: 'Admin',
+    allowedRoles: ['system_admin'],
+    items: [
+      { to: routes.users, label: 'User Maintenance' },
+    ],
+  },
 ];
 
 export default function AppShell() {
@@ -32,10 +48,19 @@ export default function AppShell() {
     navigate(routes.login, { replace: true });
   }
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (!item.allowedRoles) return true;
-    return identity?.roleCode ? item.allowedRoles.includes(identity.roleCode) : false;
-  });
+  function canAccess(allowedRoles?: string[]) {
+    if (!allowedRoles) return true;
+    return identity?.roleCode ? allowedRoles.includes(identity.roleCode) : false;
+  }
+
+  const visibleNavSections = navSections
+    .map((section) => ({
+      ...section,
+      items: canAccess(section.allowedRoles)
+        ? section.items.filter((item) => canAccess(item.allowedRoles))
+        : [],
+    }))
+    .filter((section) => section.items.length > 0);
 
   const sidebarContent = (
     <>
@@ -58,23 +83,35 @@ export default function AppShell() {
         ) : null}
       </div>
 
-      <nav className="flex flex-col gap-1 p-3">
-        {visibleNavItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={({ isActive }) =>
-              [
-                'rounded-lg px-3 py-2 text-sm font-medium transition',
-                isActive
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100',
-              ].join(' ')
-            }
-          >
-            {item.label}
-          </NavLink>
+      <nav className="flex flex-col gap-4 p-3">
+        {visibleNavSections.map((section, index) => (
+          <div key={section.label ?? `primary-${index}`}>
+            {section.label ? (
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {section.label}
+              </p>
+            ) : null}
+
+            <div className="flex flex-col gap-1">
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    [
+                      'rounded-lg px-3 py-2 text-sm font-medium transition',
+                      isActive
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-700 hover:bg-slate-100',
+                    ].join(' ')
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
