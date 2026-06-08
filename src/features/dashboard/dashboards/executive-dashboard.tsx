@@ -56,6 +56,7 @@ export function ExecutiveDashboard() {
     <DashboardFrame
       title="Executive Dashboard"
       subtitle="Procurement exposure, supplier readiness, and operating risk."
+      showSalesRefreshPanel
     >
       {isLoading ? <DashboardLoading /> : null}
       {error ? <DashboardError message={(error as Error).message} /> : null}

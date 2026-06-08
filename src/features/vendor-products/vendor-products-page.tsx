@@ -194,6 +194,8 @@ export default function VendorProductsPage() {
     direction: 'asc',
   });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [productSearchPage, setProductSearchPage] = useState(0);
   const [productId, setProductId] = useState('');
   const [vendorId, setVendorId] = useState('');
   const [vendorSku, setVendorSku] = useState('');
@@ -237,8 +239,17 @@ export default function VendorProductsPage() {
   const { data: products = [], isLoading: isProductsLoading } = useQuery<
     ProductLookupItem[]
   >({
-    queryKey: ['products', { take: 100, skip: 0 }],
-    queryFn: () => getProducts({ take: 100, skip: 0 }),
+    queryKey: [
+      'products',
+      { q: productSearch.trim(), take: 10, skip: productSearchPage * 10 },
+    ],
+    queryFn: () =>
+      getProducts({
+        q: productSearch.trim(),
+        take: 10,
+        skip: productSearchPage * 10,
+      }),
+    enabled: productSearch.trim().length >= 2,
   });
 
   const vendorOptions = useMemo(
@@ -266,6 +277,8 @@ export default function VendorProductsPage() {
   );
 
   const resetCreateForm = () => {
+    setProductSearch('');
+    setProductSearchPage(0);
     setProductId('');
     setVendorId('');
     setVendorSku('');
@@ -1114,6 +1127,24 @@ export default function VendorProductsPage() {
             <div className="grid gap-4 px-6 py-5 md:grid-cols-2">
               <div>
                 <label
+                  htmlFor="newVendorProductProductSearch"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  Product Search
+                </label>
+                <input
+                  id="newVendorProductProductSearch"
+                  type="search"
+                  value={productSearch}
+                  onChange={(event) => {
+                    setProductSearch(event.target.value);
+                    setProductSearchPage(0);
+                  }}
+                  placeholder="Search SKU or product name"
+                  className="mb-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                />
+
+                <label
                   htmlFor="newVendorProductProduct"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
@@ -1127,7 +1158,11 @@ export default function VendorProductsPage() {
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:cursor-not-allowed disabled:bg-slate-100"
                 >
                   <option value="">
-                    {isProductsLoading ? 'Loading products...' : 'Select product'}
+                    {productSearch.trim().length < 2
+                      ? 'Search at least 2 characters'
+                      : isProductsLoading
+                        ? 'Loading products...'
+                        : 'Select product'}
                   </option>
                   {productOptions.map((product) => (
                     <option key={product.id} value={product.id}>
@@ -1135,6 +1170,33 @@ export default function VendorProductsPage() {
                     </option>
                   ))}
                 </select>
+                {productSearch.trim().length >= 2 ? (
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-xs text-slate-500">
+                      Page {productSearchPage + 1}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProductSearchPage((current) => Math.max(0, current - 1))
+                        }
+                        disabled={productSearchPage === 0 || isProductsLoading}
+                        className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProductSearchPage((current) => current + 1)}
+                        disabled={products.length < 10 || isProductsLoading}
+                        className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               <div>

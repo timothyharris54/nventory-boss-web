@@ -55,6 +55,7 @@ export function PurchasingManagerDashboard() {
     <DashboardFrame
       title="Purchasing Manager Dashboard"
       subtitle="Purchasing workload, supplier coverage, and exception oversight."
+      showSalesRefreshPanel
     >
       {isLoading ? <DashboardLoading /> : null}
       {error ? <DashboardError message={(error as Error).message} /> : null}
