@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getProducts } from '../inventory/products-api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ProductLookupItem } from '../inventory/product-types';
+import { ProductLookupPanel } from '../inventory/product-lookup-panel';
 import { LOCATION_OPTIONS } from '../inventory/locations';
 import { createInventoryAdjustment } from './api';
 import type { CreateAdjustmentRequest } from './adjustments-types';
@@ -21,16 +21,6 @@ export default function AdjustmentsPage() {
   const [reasonCodeInput, setReasonCodeInput] = useState(
     ADJUSTMENT_REASON_CODE_OPTIONS[0]?.value ?? ''
   );
-
-  const {
-    data: products,
-    isLoading: isProductsLoading,
-    isError: isProductsError,
-    error: productsError,
-  } = useQuery({
-    queryKey: ['products', { take: 25, skip: 0 }],
-    queryFn: () => getProducts({ take: 25, skip: 0 }),
-  });
 
   /*
   const {
@@ -58,10 +48,6 @@ export default function AdjustmentsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to create Adjustment.');
     },
   });
-
-  function handleSelectProduct(product: ProductLookupItem) {
-    setSelectedProduct(product);
-  }
 
   function handleCreateAdjustment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,63 +82,17 @@ export default function AdjustmentsPage() {
         </p>
       </div>
 
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Products</h2>
-
-        {isProductsLoading && (
-          <div className="text-sm text-slate-600">Loading products...</div>
-        )}
-
-        {isProductsError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {(productsError as Error).message}
-          </div>
-        )}
-
-        {products && (
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-100 text-left">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">SKU</th>
-                  <th className="px-4 py-3 font-semibold">Name</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">ID</th>
-                  <th className="px-4 py-3 font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => {
-                  const isSelected = selectedProduct?.id === product.id;
-
-                  return (
-                    <tr
-                      key={product.id}
-                      className={`border-t border-slate-200 ${
-                        isSelected ? 'bg-slate-50' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3">{product.sku}</td>
-                      <td className="px-4 py-3">{product.name}</td>
-                      <td className="px-4 py-3">{product.status}</td>
-                      <td className="px-4 py-3">{product.id}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectProduct(product)}
-                          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                        >
-                          {isSelected ? 'Selected' : 'Use Product'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ProductLookupPanel
+        selectedProduct={selectedProduct}
+        onSelectProduct={setSelectedProduct}
+        onClearProduct={() => {
+          setSelectedProduct(null);
+          setLocationCodeInput(LOCATION_OPTIONS[0]?.code ?? 'MAIN');
+          setQuantityInput('');
+          setReasonCodeInput(ADJUSTMENT_REASON_CODE_OPTIONS[0]?.value ?? '');
+          setNotesInput('');
+        }}
+      />
 
       {selectedProduct && (
         <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

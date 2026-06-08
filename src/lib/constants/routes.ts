@@ -10,4 +10,5 @@ export const routes = {
   purchaseOrders: '/procurement/purchase-orders',
   vendorProducts: '/vendor-products',
   users: '/users',
+  vendors: '/vendors',
 } as const;

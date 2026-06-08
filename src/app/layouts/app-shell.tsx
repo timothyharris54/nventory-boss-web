@@ -34,6 +34,7 @@ const navSections: NavSection[] = [
     allowedRoles: ['system_admin'],
     items: [
       { to: routes.users, label: 'User Maintenance' },
+      { to: routes.vendors, label: 'Vendor Maintenance' },
     ],
   },
 ];

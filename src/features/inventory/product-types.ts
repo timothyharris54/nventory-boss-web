@@ -11,6 +11,14 @@ export type ProductLookupItem = {
 };
 
 export type ProductLookupFilters = {
+  q?: string;
   take?: number;
   skip?: number;
+};
+
+export type ProductSearchResult = {
+  items: ProductLookupItem[];
+  total: number;
+  take: number;
+  skip: number;
 };

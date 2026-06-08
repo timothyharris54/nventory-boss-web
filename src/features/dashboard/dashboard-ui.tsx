@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import type { DashboardAction, DashboardMetric } from './role-dashboard-types';
+import { SalesRefreshPanel } from './sales-refresh-panel';
 
 type DashboardFrameProps = {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  showSalesRefreshPanel?: boolean;
 };
 
 type MetricGridProps = {
@@ -34,6 +36,7 @@ export function DashboardFrame({
   title,
   subtitle,
   children,
+  showSalesRefreshPanel = false,
 }: DashboardFrameProps) {
   return (
     <div className="p-4 md:p-6">
@@ -41,6 +44,12 @@ export function DashboardFrame({
         <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
         <p className="mt-1 text-sm text-slate-600">{subtitle}</p>
       </div>
+
+      {showSalesRefreshPanel ? (
+        <div className="mb-4">
+          <SalesRefreshPanel />
+        </div>
+      ) : null}
 
       {children}
     </div>

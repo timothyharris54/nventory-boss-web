@@ -10,6 +10,7 @@ import RecommendationsPage from '../../features/procurement/recommendations-page
 import PurchaseOrdersPage from '../../features/procurement/purchase-orders-page';
 import VendorProductsPage from '../../features/vendor-products/vendor-products-page';
 import UsersPage from '../../features/users/users-page';
+import VendorsPage from '../../features/vendors/vendors-page';
 import LoginPage from '../../features/auth/login-page';
 import RequireAuth from '../../features/auth/require-auth';
 import { routes } from '../../lib/constants/routes';
@@ -49,6 +50,10 @@ export function AppRouter() {
             {
               path: routes.users.slice(1),
               element: <UsersPage />,
+            },
+            {
+              path: routes.vendors.slice(1),
+              element: <VendorsPage />,
             },
           ],
         },

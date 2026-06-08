@@ -1,24 +1,15 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getInventoryBalances } from './api';
-import { getProducts } from './products-api';
 import { LOCATION_OPTIONS } from './locations';
 import type { InventoryBalanceFilters } from './types';
 import type { ProductLookupItem } from './product-types';
+import { ProductLookupPanel } from './product-lookup-panel';
 import { QuantityBadge } from '../../components/data-display/quantity-badge';
 export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductLookupItem | null>(null);
   const [locationCodeInput, setLocationCodeInput] = useState('MAIN');
 
-  const {
-    data: products,
-    isLoading: isProductsLoading,
-    isError: isProductsError,
-    error: productsError,
-  } = useQuery({
-    queryKey: ['products', { take: 25, skip: 0 }],
-    queryFn: () => getProducts({ take: 25, skip: 0 }),
-  });
   const inventoryFilters: InventoryBalanceFilters | null = 
       selectedProduct && locationCodeInput.trim() 
     ? {
@@ -40,11 +31,6 @@ export default function InventoryPage() {
     enabled: inventoryFilters !== null,
   });
 
-  function handleSelectProduct(product: ProductLookupItem) {
-    setSelectedProduct(product);
-  }
-
- 
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -54,54 +40,14 @@ export default function InventoryPage() {
         </p>
       </div>
 
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Products</h2>
-
-        {isProductsLoading && (
-          <div className="text-sm text-slate-600">Loading products...</div>
-        )}
-
-        {isProductsError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {(productsError as Error).message}
-          </div>
-        )}
-
-        {products && (
-          <div className="overflow-hidden rounded-lg border border-slate-200">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-100 text-left">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">SKU</th>
-                  <th className="px-4 py-3 font-semibold">Name</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">ID</th>
-                  <th className="px-4 py-3 font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-t border-slate-200">
-                    <td className="px-4 py-3">{product.sku}</td>
-                    <td className="px-4 py-3">{product.name}</td>
-                    <td className="px-4 py-3">{product.status}</td>
-                    <td className="px-4 py-3">{product.id}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectProduct(product)}
-                        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                      >
-                        Use Product
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <ProductLookupPanel
+        selectedProduct={selectedProduct}
+        onSelectProduct={setSelectedProduct}
+        onClearProduct={() => {
+          setSelectedProduct(null);
+          setLocationCodeInput('MAIN');
+        }}
+      />
       {
         selectedProduct && (
         <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

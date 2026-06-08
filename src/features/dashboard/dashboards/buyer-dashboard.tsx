@@ -48,6 +48,7 @@ export function BuyerDashboard() {
     <DashboardFrame
       title="Buyer Dashboard"
       subtitle="Purchasing work queue, supplier follow-up, and open PO exposure."
+      showSalesRefreshPanel
     >
       {isLoading ? <DashboardLoading /> : null}
       {error ? <DashboardError message={(error as Error).message} /> : null}

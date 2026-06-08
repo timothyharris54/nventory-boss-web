@@ -37,6 +37,7 @@ export function PlannerDashboard() {
     <DashboardFrame
       title="Planner Dashboard"
       subtitle="Demand-driven replenishment, stockout risk, and inventory coverage."
+      showSalesRefreshPanel
     >
       {isLoading ? <DashboardLoading /> : null}
       {error ? <DashboardError message={(error as Error).message} /> : null}
