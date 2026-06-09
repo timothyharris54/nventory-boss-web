@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
   { to: routes.inventory, label: 'Inventory' },
   { to: routes.ledger, label: 'Ledger' },
   { to: routes.reservations, label: 'Reservations' },
+  { to: routes.salesOrders, label: 'Sales Orders' },
   { to: routes.adjustments, label: 'Adjustments' },
   { to: routes.transfers, label: 'Transfers' },
   { to: routes.recommendations, label: 'Recommendations' },

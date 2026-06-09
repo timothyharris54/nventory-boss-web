@@ -138,6 +138,7 @@ export function SalesRefreshPanel() {
     mutationFn: () => refreshSales(DEFAULT_SALES_REFRESH_PAYLOAD),
     onMutate: () => {
       setRefreshFeedback(null);
+      setElapsedSeconds(0);
     },
     onSuccess: async (response) => {
       const results = await Promise.allSettled(
@@ -197,11 +198,9 @@ export function SalesRefreshPanel() {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-      setElapsedSeconds(0);
       return;
     }
 
-    setElapsedSeconds(0);
     intervalRef.current = window.setInterval(() => {
       setElapsedSeconds((value) => value + 1);
     }, 1000);

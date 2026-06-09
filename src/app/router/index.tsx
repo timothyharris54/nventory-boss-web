@@ -4,6 +4,7 @@ import DashboardPage from '../../features/dashboard/dashboard-page';
 import InventoryPage from '../../features/inventory/inventory-page';
 import LedgerPage from '../../features/ledger/ledger-page';
 import ReservationsPage from '../../features/reservations/reservations-page';
+import SalesOrdersPage from '../../features/sales/sales-orders-page';
 import AdjustmentsPage from '../../features/movements/adjustments-page';
 import TransfersPage from '../../features/movements/transfers-page';
 import RecommendationsPage from '../../features/procurement/recommendations-page';
@@ -33,6 +34,7 @@ export function AppRouter() {
             { path: routes.inventory.slice(1), element: <InventoryPage /> },
             { path: routes.ledger.slice(1), element: <LedgerPage /> },
             { path: routes.reservations.slice(1), element: <ReservationsPage /> },
+            { path: routes.salesOrders.slice(1), element: <SalesOrdersPage /> },
             { path: routes.adjustments.slice(1), element: <AdjustmentsPage /> },
             { path: routes.transfers.slice(1), element: <TransfersPage /> },
             {
