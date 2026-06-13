@@ -4,6 +4,7 @@ export const routes = {
   inventory: '/inventory',
   ledger: '/ledger',
   reservations: '/reservations',
+  salesOrders: '/sales-orders',
   adjustments: '/movements/adjustments',
   transfers: '/movements/transfers',
   recommendations: '/procurement/recommendations',
