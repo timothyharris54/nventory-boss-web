@@ -10,6 +10,7 @@ import TransfersPage from '../../features/movements/transfers-page';
 import RecommendationsPage from '../../features/procurement/recommendations-page';
 import PurchaseOrdersPage from '../../features/procurement/purchase-orders-page';
 import VendorProductsPage from '../../features/vendor-products/vendor-products-page';
+import EcommerceConnectionsPage from '../../features/setup/ecommerce-connections-page';
 import UsersPage from '../../features/users/users-page';
 import VendorsPage from '../../features/vendors/vendors-page';
 import LoginPage from '../../features/auth/login-page';
@@ -48,6 +49,10 @@ export function AppRouter() {
             {
               path: routes.vendorProducts.slice(1),
               element: <VendorProductsPage />,
+            },
+            {
+              path: routes.ecommerceConnections.slice(1),
+              element: <EcommerceConnectionsPage />,
             },
             {
               path: routes.users.slice(1),

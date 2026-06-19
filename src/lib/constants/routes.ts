@@ -10,6 +10,7 @@ export const routes = {
   recommendations: '/procurement/recommendations',
   purchaseOrders: '/procurement/purchase-orders',
   vendorProducts: '/vendor-products',
+  ecommerceConnections: '/setup/ecommerce-channels',
   users: '/users',
   vendors: '/vendors',
 } as const;

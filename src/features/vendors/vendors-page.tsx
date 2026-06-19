@@ -2,13 +2,20 @@ import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { createVendor, getVendors, updateVendor } from './api';
+import {
+  createVendor,
+  createVendorPlatform,
+  getVendorPlatforms,
+  getVendors,
+  updateVendor,
+} from './api';
 import type { Vendor } from './vendor-types';
 
 type VendorFormMode = 'create' | 'edit';
 
 type VendorFormState = {
   name: string;
+  platformId: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
@@ -18,8 +25,24 @@ type VendorFormState = {
   notes: string;
 };
 
+type PlatformFormState = {
+  name: string;
+  websiteUrl: string;
+  loginUrl: string;
+  username: string;
+  password: string;
+  accountNumber: string;
+  paymentTerms: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  notes: string;
+  isActive: boolean;
+};
+
 const emptyForm: VendorFormState = {
   name: '',
+  platformId: '',
   contactName: '',
   contactEmail: '',
   contactPhone: '',
@@ -27,6 +50,21 @@ const emptyForm: VendorFormState = {
   paymentTerms: '',
   isActive: true,
   notes: '',
+};
+
+const emptyPlatformForm: PlatformFormState = {
+  name: '',
+  websiteUrl: '',
+  loginUrl: '',
+  username: '',
+  password: '',
+  accountNumber: '',
+  paymentTerms: '',
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  notes: '',
+  isActive: true,
 };
 
 function getErrorMessage(error: unknown) {
@@ -59,6 +97,7 @@ function toOptionalNumber(value: string) {
 function vendorToForm(vendor: Vendor): VendorFormState {
   return {
     name: vendor.name,
+    platformId: vendor.platformId ?? '',
     contactName: vendor.contactName ?? '',
     contactEmail: vendor.contactEmail ?? '',
     contactPhone: vendor.contactPhone ?? '',
@@ -78,10 +117,18 @@ export default function VendorsPage() {
   const [formMode, setFormMode] = useState<VendorFormMode>('create');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [form, setForm] = useState<VendorFormState>(emptyForm);
+  const [isPlatformFormOpen, setIsPlatformFormOpen] = useState(false);
+  const [platformForm, setPlatformForm] =
+    useState<PlatformFormState>(emptyPlatformForm);
 
   const vendorsQuery = useQuery({
     queryKey: ['vendors'],
     queryFn: getVendors,
+  });
+
+  const platformsQuery = useQuery({
+    queryKey: ['vendor-platforms'],
+    queryFn: getVendorPlatforms,
   });
 
   const filteredVendors = useMemo(() => {
@@ -94,6 +141,7 @@ export default function VendorsPage() {
 
         return [
           vendor.name,
+          vendor.platform?.name ?? '',
           vendor.contactName ?? '',
           vendor.contactEmail ?? '',
           vendor.contactPhone ?? '',
@@ -119,6 +167,17 @@ export default function VendorsPage() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
+  const createPlatformMutation = useMutation({
+    mutationFn: createVendorPlatform,
+    onSuccess: async (platform) => {
+      await queryClient.invalidateQueries({ queryKey: ['vendor-platforms'] });
+      toast.success('Vendor platform created.');
+      setForm((current) => ({ ...current, platformId: platform.id }));
+      closePlatformForm();
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ vendorId, body }: { vendorId: string; body: VendorFormState }) =>
       updateVendor(vendorId, buildPayload(body)),
@@ -132,12 +191,15 @@ export default function VendorsPage() {
   });
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isSavingPlatform = createPlatformMutation.isPending;
   const activeCount = (vendorsQuery.data ?? []).filter((vendor) => vendor.isActive).length;
   const inactiveCount = (vendorsQuery.data ?? []).length - activeCount;
+  const platformCount = platformsQuery.data?.length ?? 0;
 
   function buildPayload(input: VendorFormState) {
     return {
       name: input.name.trim(),
+      platformId: toOptionalString(input.platformId),
       contactName: toOptionalString(input.contactName),
       contactEmail: toOptionalString(input.contactEmail),
       contactPhone: toOptionalString(input.contactPhone),
@@ -145,6 +207,29 @@ export default function VendorsPage() {
       paymentTerms: toOptionalString(input.paymentTerms),
       isActive: input.isActive,
       notes: toOptionalString(input.notes),
+    };
+  }
+
+  function buildPlatformPayload(input: PlatformFormState) {
+    const credentials: Record<string, unknown> = {};
+    if (input.password.trim()) credentials.password = input.password.trim();
+    if (input.accountNumber.trim()) {
+      credentials.accountNumber = input.accountNumber.trim();
+    }
+
+    return {
+      name: input.name.trim(),
+      websiteUrl: toOptionalString(input.websiteUrl),
+      loginUrl: toOptionalString(input.loginUrl),
+      username: toOptionalString(input.username),
+      credentials:
+        Object.keys(credentials).length > 0 ? credentials : undefined,
+      paymentTerms: toOptionalString(input.paymentTerms),
+      contactName: toOptionalString(input.contactName),
+      contactEmail: toOptionalString(input.contactEmail),
+      contactPhone: toOptionalString(input.contactPhone),
+      notes: toOptionalString(input.notes),
+      isActive: input.isActive,
     };
   }
 
@@ -170,6 +255,17 @@ export default function VendorsPage() {
     updateMutation.reset();
   }
 
+  function openPlatformForm() {
+    setPlatformForm(emptyPlatformForm);
+    setIsPlatformFormOpen(true);
+  }
+
+  function closePlatformForm() {
+    setIsPlatformFormOpen(false);
+    setPlatformForm(emptyPlatformForm);
+    createPlatformMutation.reset();
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -193,6 +289,18 @@ export default function VendorsPage() {
     updateMutation.mutate({ vendorId: editingVendor.id, body: form });
   }
 
+  function handlePlatformSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const payload = buildPlatformPayload(platformForm);
+    if (!payload.name) {
+      toast.error('Platform name is required.');
+      return;
+    }
+
+    createPlatformMutation.mutate(payload);
+  }
+
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -212,7 +320,7 @@ export default function VendorsPage() {
         </button>
       </div>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-3">
+      <div className="mb-4 grid gap-3 md:grid-cols-4">
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase text-slate-500">Total vendors</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">
@@ -226,6 +334,10 @@ export default function VendorsPage() {
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase text-slate-500">Inactive</p>
           <p className="mt-1 text-2xl font-bold text-slate-500">{inactiveCount}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase text-slate-500">Platforms</p>
+          <p className="mt-1 text-2xl font-bold text-blue-700">{platformCount}</p>
         </div>
       </div>
 
@@ -274,6 +386,7 @@ export default function VendorsPage() {
               <thead className="bg-slate-100 text-left text-slate-700">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Vendor</th>
+                  <th className="px-4 py-3 font-semibold">Platform</th>
                   <th className="px-4 py-3 font-semibold">Contact</th>
                   <th className="px-4 py-3 font-semibold">Terms</th>
                   <th className="px-4 py-3 font-semibold">Lead Time</th>
@@ -291,12 +404,22 @@ export default function VendorsPage() {
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
+                      <p>{vendor.platform?.name ?? '-'}</p>
+                      {vendor.platform?.paymentTerms ? (
+                        <p className="mt-1 text-xs text-slate-500">
+                          {vendor.platform.paymentTerms}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">
                       <p>{vendor.contactName || '-'}</p>
                       <p className="mt-1 text-xs text-slate-500">
                         {vendor.contactEmail || vendor.contactPhone || '-'}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{vendor.paymentTerms || '-'}</td>
+                    <td className="px-4 py-3 text-slate-700">
+                      {vendor.paymentTerms || vendor.platform?.paymentTerms || '-'}
+                    </td>
                     <td className="px-4 py-3 text-slate-700">
                       {vendor.defaultLeadTimeDays === null
                         ? '-'
@@ -366,6 +489,34 @@ export default function VendorsPage() {
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     required
                   />
+                </div>
+
+                <div>
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <label htmlFor="vendorPlatform" className="block text-sm font-medium text-slate-700">
+                      Platform
+                    </label>
+                    <button
+                      type="button"
+                      onClick={openPlatformForm}
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+                    >
+                      Add platform
+                    </button>
+                  </div>
+                  <select
+                    id="vendorPlatform"
+                    value={form.platformId}
+                    onChange={(event) => setForm((current) => ({ ...current, platformId: event.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                  >
+                    <option value="">No platform</option>
+                    {(platformsQuery.data ?? []).map((platform) => (
+                      <option key={platform.id} value={platform.id}>
+                        {platform.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -476,6 +627,201 @@ export default function VendorsPage() {
                   className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {isSaving ? 'Saving...' : 'Save Vendor'}
+                </button>
+              </div>
+            </form>
+          </aside>
+        </div>
+      ) : null}
+
+      {isPlatformFormOpen ? (
+        <div className="fixed inset-0 z-[60] flex justify-end bg-slate-900/40">
+          <button
+            type="button"
+            aria-label="Close vendor platform form"
+            className="absolute inset-0"
+            onClick={closePlatformForm}
+          />
+          <aside className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-xl">
+            <form onSubmit={handlePlatformSubmit} className="flex h-full flex-col">
+              <div className="border-b border-slate-200 px-5 py-4">
+                <h2 className="text-lg font-bold text-slate-900">Create Vendor Platform</h2>
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+                <div>
+                  <label htmlFor="platformName" className="mb-1 block text-sm font-medium text-slate-700">
+                    Platform name
+                  </label>
+                  <input
+                    id="platformName"
+                    type="text"
+                    value={platformForm.name}
+                    onChange={(event) => setPlatformForm((current) => ({ ...current, name: event.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="platformWebsiteUrl" className="mb-1 block text-sm font-medium text-slate-700">
+                      Website URL
+                    </label>
+                    <input
+                      id="platformWebsiteUrl"
+                      type="url"
+                      value={platformForm.websiteUrl}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, websiteUrl: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="platformLoginUrl" className="mb-1 block text-sm font-medium text-slate-700">
+                      Login URL
+                    </label>
+                    <input
+                      id="platformLoginUrl"
+                      type="url"
+                      value={platformForm.loginUrl}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, loginUrl: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="platformUsername" className="mb-1 block text-sm font-medium text-slate-700">
+                      Username
+                    </label>
+                    <input
+                      id="platformUsername"
+                      type="text"
+                      value={platformForm.username}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, username: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="platformPassword" className="mb-1 block text-sm font-medium text-slate-700">
+                      Password
+                    </label>
+                    <input
+                      id="platformPassword"
+                      type="password"
+                      value={platformForm.password}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, password: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="platformAccountNumber" className="mb-1 block text-sm font-medium text-slate-700">
+                      Account number
+                    </label>
+                    <input
+                      id="platformAccountNumber"
+                      type="text"
+                      value={platformForm.accountNumber}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, accountNumber: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="platformPaymentTerms" className="mb-1 block text-sm font-medium text-slate-700">
+                      Payment terms
+                    </label>
+                    <input
+                      id="platformPaymentTerms"
+                      type="text"
+                      value={platformForm.paymentTerms}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, paymentTerms: event.target.value }))}
+                      placeholder="60 Days Net"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <label htmlFor="platformContactName" className="mb-1 block text-sm font-medium text-slate-700">
+                      Contact name
+                    </label>
+                    <input
+                      id="platformContactName"
+                      type="text"
+                      value={platformForm.contactName}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, contactName: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="platformContactEmail" className="mb-1 block text-sm font-medium text-slate-700">
+                      Contact email
+                    </label>
+                    <input
+                      id="platformContactEmail"
+                      type="email"
+                      value={platformForm.contactEmail}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, contactEmail: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="platformContactPhone" className="mb-1 block text-sm font-medium text-slate-700">
+                      Contact phone
+                    </label>
+                    <input
+                      id="platformContactPhone"
+                      type="text"
+                      value={platformForm.contactPhone}
+                      onChange={(event) => setPlatformForm((current) => ({ ...current, contactPhone: event.target.value }))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={platformForm.isActive}
+                    onChange={(event) => setPlatformForm((current) => ({ ...current, isActive: event.target.checked }))}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  Active platform
+                </label>
+
+                <div>
+                  <label htmlFor="platformNotes" className="mb-1 block text-sm font-medium text-slate-700">
+                    Notes
+                  </label>
+                  <textarea
+                    id="platformNotes"
+                    value={platformForm.notes}
+                    onChange={(event) => setPlatformForm((current) => ({ ...current, notes: event.target.value }))}
+                    rows={4}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={closePlatformForm}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPlatform}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isSavingPlatform ? 'Saving...' : 'Save Platform'}
                 </button>
               </div>
             </form>

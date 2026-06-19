@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { getProducts } from '../inventory/products-api';
 import type { ProductLookupItem } from '../inventory/product-types';
 import { getVendors } from '../procurement/api';
 import type { ProcurementVendor } from '../procurement/types';
+import { routes } from '../../lib/constants/routes';
 import { ManageProductSuppliersPanel } from './manage-product-suppliers-panel';
 import {
   createVendorProduct,
@@ -587,6 +589,13 @@ export default function VendorProductsPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Link
+            to={routes.vendors}
+            className="w-fit rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          >
+            Manage Vendors
+          </Link>
+
           <button
             type="button"
             onClick={() => setIsCreateOpen(true)}
