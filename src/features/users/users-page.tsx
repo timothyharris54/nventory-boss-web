@@ -20,6 +20,7 @@ type UserFormMode = 'create' | 'edit';
 type UserFormState = {
   email: string;
   fullName: string;
+  temporaryPassword: string;
   isActive: boolean;
   roleCodes: UserRoleCode[];
 };
@@ -27,6 +28,7 @@ type UserFormState = {
 const emptyForm: UserFormState = {
   email: '',
   fullName: '',
+  temporaryPassword: '',
   isActive: true,
   roleCodes: [],
 };
@@ -158,6 +160,7 @@ export default function UsersPage() {
     setForm({
       email: user.email,
       fullName: user.fullName ?? '',
+      temporaryPassword: '',
       isActive: user.isActive,
       roleCodes: user.roles.map((role) => role.code),
     });
@@ -202,6 +205,7 @@ export default function UsersPage() {
       createMutation.mutate({
         email: payload.email,
         fullName: payload.fullName || undefined,
+        temporaryPassword: payload.temporaryPassword,
         isActive: payload.isActive,
         roleCodes: payload.roleCodes,
       });
@@ -416,6 +420,32 @@ export default function UsersPage() {
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                   />
                 </div>
+
+                {formMode === 'create' ? (
+                  <div>
+                    <label
+                      htmlFor="temporaryPassword"
+                      className="mb-1 block text-sm font-medium text-slate-700"
+                    >
+                      Temporary password
+                    </label>
+                    <input
+                      id="temporaryPassword"
+                      type="password"
+                      value={form.temporaryPassword}
+                      onChange={(event) => setForm((current) => ({
+                        ...current,
+                        temporaryPassword: event.target.value,
+                      }))}
+                      autoComplete="new-password"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Share this securely with the user so they can sign in.
+                    </p>
+                  </div>
+                ) : null}
 
                 {formMode === 'edit' ? (
                   <label className="flex items-center gap-2 text-sm font-medium text-slate-700">

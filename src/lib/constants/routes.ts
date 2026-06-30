@@ -1,5 +1,6 @@
 export const routes = {
   login: '/login',
+  passwordReset: '/password-reset',
   dashboard: '/dashboard',
   inventory: '/inventory',
   ledger: '/ledger',

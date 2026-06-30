@@ -23,6 +23,10 @@ export function AppRouter() {
       element: <LoginPage />,
     },
     {
+      path: routes.passwordReset,
+      element: <LoginPage />,
+    },
+    {
       element: <RequireAuth />,
       children: [
         {
