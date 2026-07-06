@@ -36,6 +36,7 @@ export function SystemAdminDashboard() {
     <DashboardFrame
       title="System Admin Dashboard"
       subtitle="Account access, user health, and configuration readiness."
+      showSalesRefreshPanel
     >
       {isLoading ? <DashboardLoading /> : null}
       {error ? <DashboardError message={(error as Error).message} /> : null}

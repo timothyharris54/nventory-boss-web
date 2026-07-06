@@ -18,6 +18,6 @@ export function refreshSales(
 ): Promise<SalesRefreshResponse> {
   return apiFetch<SalesRefreshResponse>('/accounts/current/sales-refresh', {
     method: 'POST',
-    body: payload,
+    body: JSON.stringify(payload),
   });
 }

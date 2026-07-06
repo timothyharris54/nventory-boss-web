@@ -28,6 +28,7 @@ export type UserMaintenanceItem = {
 export type CreateUserRequest = {
   email: string;
   fullName?: string;
+  temporaryPassword: string;
   isActive?: boolean;
   roleCodes: UserRoleCode[];
 };

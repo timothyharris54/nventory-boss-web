@@ -12,6 +12,8 @@ const DEFAULT_SALES_REFRESH_PAYLOAD = {
 };
 
 const REFRESHED_QUERY_KEYS = [
+  ['products'],
+  ['sales-orders'],
   ['recommendations'],
   ['replenishment-open'],
   ['purchase-orders'],
@@ -32,7 +34,9 @@ const feedbackClasses = {
 };
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unable to refresh sales.';
+  return error instanceof Error
+    ? error.message
+    : 'Unable to synchronize WooCommerce data.';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -121,10 +125,12 @@ function getSalesRefreshResultMessage(response: SalesRefreshResponse) {
   ].filter(Boolean);
 
   if (counts.length > 0) {
-    return `Sales refreshed: ${counts.join(', ')}.`;
+    return `WooCommerce synchronization complete: ${counts.join(', ')}.`;
   }
-  console.log('return from RefreshSales'+JSON.stringify(counts));
-  return response.message ?? 'Sales refreshed and replenishment updated.';
+  return (
+    response.message ??
+    'WooCommerce products and orders synchronized and replenishment updated.'
+  );
 }
 
 export function SalesRefreshPanel() {
@@ -147,7 +153,6 @@ export function SalesRefreshPanel() {
         ),
       );
       const message = getSalesRefreshResultMessage(response);
-      console.log('message from SalesRefreshPanel: '+message);
       const failedReloadCount = results.filter(
         (result) => result.status === 'rejected',
       ).length;
@@ -162,10 +167,13 @@ export function SalesRefreshPanel() {
           tone: 'warning',
           message: warningMessage,
         });
-        toast.warning('Sales refreshed, but dashboard data did not fully reload.', {
-          closeButton: true,
-          duration: Infinity,
-        });
+        toast.warning(
+          'WooCommerce synchronized, but dashboard data did not fully reload.',
+          {
+            closeButton: true,
+            duration: Infinity,
+          },
+        );
         return;
       }
 
@@ -217,9 +225,12 @@ export function SalesRefreshPanel() {
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-semibold text-slate-900">Sales Refresh</h2>
+          <h2 className="font-semibold text-slate-900">
+            WooCommerce Synchronization
+          </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Pull the latest sales, rebuild demand history, and update replenishment.
+            Pull the latest products and orders, rebuild demand history, and update
+            replenishment.
           </p>
         </div>
 
@@ -229,7 +240,9 @@ export function SalesRefreshPanel() {
           disabled={refreshMutation.isPending}
           className="inline-flex min-h-10 items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          {refreshMutation.isPending ? 'Refreshing...' : 'Refresh sales'}
+          {refreshMutation.isPending
+            ? 'Synchronizing...'
+            : 'Synchronize WooCommerce'}
         </button>
       </div>
 
@@ -238,7 +251,9 @@ export function SalesRefreshPanel() {
       </p>
       {refreshMutation.isPending ? (
         <div className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-slate-800">
-          <p className="font-medium text-sky-900">Refreshing sales and dashboard data...</p>
+          <p className="font-medium text-sky-900">
+            Synchronizing products, orders, and dashboard data...
+          </p>
           <p className="mt-1 text-xs text-slate-600">
             This may take up to a minute. Elapsed: {elapsedSeconds}s.
           </p>

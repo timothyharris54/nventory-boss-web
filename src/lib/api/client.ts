@@ -9,6 +9,14 @@ type RequestOptions = {
   token?: string;
 };
 
+function serializeBody(body: unknown): string | undefined {
+  if (body === undefined) {
+    return undefined;
+  }
+
+  return typeof body === 'string' ? body : JSON.stringify(body);
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
@@ -22,7 +30,7 @@ export async function apiFetch<T>(
       'Content-Type': 'application/json',
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: serializeBody(body),
   });
 
   if (response.status === 401) {
@@ -32,8 +40,28 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed (${response.status})`);
+    if (!text) {
+      throw new Error(`Request failed (${response.status})`);
+    }
+
+    let parsed: { message?: string | string[] };
+    try {
+      parsed = JSON.parse(text) as { message?: string | string[] };
+    } catch {
+      throw new Error(text);
+    }
+
+    if (Array.isArray(parsed.message)) {
+      throw new Error(parsed.message.join(' '));
+    }
+
+    throw new Error(parsed.message || text);
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
