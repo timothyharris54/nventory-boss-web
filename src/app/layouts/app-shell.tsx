@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   { to: routes.transfers, label: 'Transfers' },
   { to: routes.recommendations, label: 'Recommendations' },
   { to: routes.purchaseOrders, label: 'Purchase Orders' },
+  { to: routes.vendors, label: 'Vendor Maintenance' },
   { to: routes.vendorProducts, label: 'Vendor Products' },
 ];
 
@@ -44,8 +45,8 @@ const navSections: NavSection[] = [
     label: 'Admin',
     allowedRoles: ['system_admin'],
     items: [
+      { to: routes.ecommerceConnections, label: 'Ecommerce Setup' },
       { to: routes.users, label: 'User Maintenance' },
-      { to: routes.vendors, label: 'Vendor Maintenance' },
     ],
   },
 ];
