@@ -20,6 +20,7 @@ export type VendorProduct = {
     id: string;
     sku: string;
     name: string;
+    imageUrl?: string | null;
     status: string;
   };
 };

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 import { searchProducts } from './products-api';
 import type { ProductLookupItem } from './product-types';
 
@@ -9,6 +10,7 @@ type ProductLookupPanelProps = {
   onClearProduct?: () => void;
   title?: string;
   description?: string;
+  showIdleState?: boolean;
 };
 
 const PAGE_SIZE = 10;
@@ -20,6 +22,7 @@ export function ProductLookupPanel({
   onClearProduct,
   title = 'Product Lookup',
   description = 'Search by SKU or product name.',
+  showIdleState = true,
 }: ProductLookupPanelProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -114,7 +117,7 @@ export function ProductLookupPanel({
         </button>
       ) : null}
 
-      {!canSearch ? (
+      {!canSearch && showIdleState ? (
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
           Search by SKU or product name to load results.
         </div>
@@ -136,8 +139,7 @@ export function ProductLookupPanel({
             <table className="min-w-full text-sm">
               <thead className="bg-slate-100 text-left text-slate-700">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">SKU</th>
-                  <th className="px-4 py-3 font-semibold">Name</th>
+                  <th className="px-4 py-3 font-semibold">Product</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                   <th className="px-4 py-3 text-right font-semibold">Action</th>
                 </tr>
@@ -154,10 +156,13 @@ export function ProductLookupPanel({
                         isSelected ? 'bg-slate-50' : '',
                       ].join(' ')}
                     >
-                      <td className="px-4 py-3 font-medium text-slate-900">
-                        {product.sku}
+                      <td className="px-4 py-3">
+                        <ProductIdentity
+                          name={product.name}
+                          sku={product.sku}
+                          imageUrl={product.imageUrl}
+                        />
                       </td>
-                      <td className="px-4 py-3 text-slate-700">{product.name}</td>
                       <td className="px-4 py-3 text-slate-600">{product.status}</td>
                       <td className="px-4 py-3 text-right">
                         <button

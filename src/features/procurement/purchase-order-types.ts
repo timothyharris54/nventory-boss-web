@@ -141,6 +141,7 @@ export type PurchaseOrderProduct = {
   accountId: string;
   sku: string;
   name: string;
+  imageUrl?: string | null;
   status: string;
   isVariant: boolean;
   parentProductId: string | null;
@@ -185,6 +186,7 @@ export type PurchaseOrderReceiptLine = {
     id: string;
     sku: string;
     name: string;
+    imageUrl?: string | null;
   } | null;
   vendorProduct: {
     id: string;

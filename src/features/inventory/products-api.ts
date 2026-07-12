@@ -1,8 +1,12 @@
 import { apiFetch } from '../../lib/api/client';
 import type {
+  CreateProductDto,
+  PublishProductRequest,
+  PublishProductResponse,
   ProductLookupFilters,
   ProductLookupItem,
   ProductSearchResult,
+  UpdateProductDto,
 } from './product-types';
 
 export async function getProducts(
@@ -47,4 +51,33 @@ export async function searchProducts(
   const query = params.toString();
 
   return apiFetch(`/products/search${query ? `?${query}` : ''}`);
+}
+
+export async function createProduct(
+  body: CreateProductDto,
+): Promise<ProductLookupItem> {
+  return apiFetch('/products', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateProduct(
+  productId: string,
+  body: UpdateProductDto,
+): Promise<ProductLookupItem> {
+  return apiFetch(`/products/${productId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function publishProduct(
+  productId: string,
+  body: PublishProductRequest,
+): Promise<PublishProductResponse> {
+  return apiFetch(`/products/${productId}/ecommerce/publish`, {
+    method: 'POST',
+    body,
+  });
 }

@@ -31,6 +31,7 @@ export type ReorderRecommendationRow = {
     id: string;
     sku: string;
     name: string;
+    imageUrl?: string | null;
   };
 
   vendor?: {

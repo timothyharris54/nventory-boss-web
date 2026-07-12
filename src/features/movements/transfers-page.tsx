@@ -8,6 +8,7 @@ import type { ProductLookupItem } from '../inventory/product-types';
 import { ProductLookupPanel } from '../inventory/product-lookup-panel';
 import { createInventoryTransfer } from './api';
 import type { CreateTransferRequest } from './transfer-types';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 function toNumber(value: string | null | undefined) {
   if (!value) return 0;
@@ -175,12 +176,15 @@ export default function TransfersPage() {
 
       {selectedProduct ? (
         <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Selected Product
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">
-            {selectedProduct.sku} - {selectedProduct.name}
-          </h2>
+          <ProductIdentity
+            name={selectedProduct.name}
+            sku={selectedProduct.sku}
+            imageUrl={selectedProduct.imageUrl}
+            size="md"
+          />
         </div>
       ) : null}
 

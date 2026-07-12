@@ -19,6 +19,7 @@ import {
   productHasActivePrimaryVendor,
   productHasActiveSuppliers,
 } from './vendor-product-validation';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 type ProductGroupFilter =
   | 'all'
@@ -45,11 +46,16 @@ type SortState = {
 type SelectedProduct = {
   id: string;
   name?: string;
+  sku?: string;
+  imageUrl?: string | null;
 };
 
 type ProductGroup = {
   productId: string;
   label: string;
+  name?: string;
+  sku?: string;
+  imageUrl?: string | null;
   status?: string;
   rows: VendorProduct[];
   primaryVendor?: VendorProduct;
@@ -413,6 +419,9 @@ export default function VendorProductsPage() {
         return {
           productId: currentProductId,
           label: getProductLabel(representative),
+          name: representative.product?.name,
+          sku: representative.product?.sku,
+          imageUrl: representative.product?.imageUrl,
           status: representative.product?.status,
           rows,
           primaryVendor,
@@ -734,10 +743,14 @@ export default function VendorProductsPage() {
             >
               <summary className="flex cursor-pointer list-none flex-col gap-3 px-4 py-4 hover:bg-slate-50 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-slate-900">
-                      {group.label}
-                    </span>
+                  <ProductIdentity
+                    name={group.name}
+                    sku={group.sku}
+                    imageUrl={group.imageUrl}
+                    fallbackName={group.label}
+                    size="md"
+                  />
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     {group.status && (
                       <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                         {group.status}
@@ -893,6 +906,8 @@ export default function VendorProductsPage() {
                                   setSelectedProduct({
                                     id: row.productId,
                                     name: row.product?.name ?? row.product?.sku,
+                                    sku: row.product?.sku,
+                                    imageUrl: row.product?.imageUrl,
                                   })
                                 }
                                 disabled={isVendorsLoading}
@@ -919,6 +934,8 @@ export default function VendorProductsPage() {
         <ManageProductSuppliersPanel
           productId={selectedProduct.id}
           productName={selectedProduct.name}
+          productSku={selectedProduct.sku}
+          productImageUrl={selectedProduct.imageUrl}
           vendors={vendorOptions}
           onClose={handleCloseSupplierPanel}
         />

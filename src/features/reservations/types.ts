@@ -21,6 +21,7 @@ export type InventoryReservationRow = {
     id: string;
     name: string;
     sku: string;
+    imageUrl?: string | null;
   };
 };
 

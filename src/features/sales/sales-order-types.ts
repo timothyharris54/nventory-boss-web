@@ -52,6 +52,7 @@ export type SalesOrderLine = {
   productId: string | null;
   sku: string | null;
   productName: string | null;
+  imageUrl?: string | null;
   quantity: string;
   reservedQty: string | null;
   fulfilledQty: string | null;

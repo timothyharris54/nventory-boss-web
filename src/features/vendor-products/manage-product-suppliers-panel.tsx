@@ -12,6 +12,7 @@ import {
   getVendorProductRuleWarnings,
   productHasActivePrimaryVendor,
 } from './vendor-product-validation';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 type VendorOption = {
   id: string;
@@ -21,6 +22,8 @@ type VendorOption = {
 type Props = {
   productId: string;
   productName?: string;
+  productSku?: string;
+  productImageUrl?: string | null;
   vendors: VendorOption[];
   onClose: () => void;
 };
@@ -45,6 +48,8 @@ function InlineWarnings({ warnings }: { warnings: string[] }) {
 export function ManageProductSuppliersPanel({
   productId,
   productName,
+  productSku,
+  productImageUrl,
   vendors,
   onClose,
 }: Props) {
@@ -198,9 +203,15 @@ export function ManageProductSuppliersPanel({
               <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
                 Product Suppliers
               </p>
-              <h2 className="text-xl font-semibold">
-                {productName ?? `Product ${productId}`}
-              </h2>
+              <div className="mt-2">
+                <ProductIdentity
+                  name={productName}
+                  sku={productSku}
+                  imageUrl={productImageUrl}
+                  fallbackName={`Product ${productId}`}
+                  size="md"
+                />
+              </div>
             </div>
 
             <button

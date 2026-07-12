@@ -16,5 +16,6 @@ export type InventoryBalanceRow = {
     id: string;
     name: string;
     sku: string;
+    imageUrl?: string | null;
   };
 };

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { receivePurchaseOrder } from './api';
 import type { ReceivePurchaseOrderDto } from './purchase-order-types';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 type PurchaseOrderLine = {
   id: string;
@@ -13,6 +14,7 @@ type PurchaseOrderLine = {
   product?: {
     name?: string | null;
     sku?: string | null;
+    imageUrl?: string | null;
   } | null;
   vendorProduct?: {
     unitCost?: string | null;
@@ -45,6 +47,7 @@ function buildInitialReceiveRows(lines: PurchaseOrderLine[]) {
       remainingQty: remaining,
       receiveQty: remaining > 0 ? String(remaining) : '',
       sku: line.product?.sku ?? null,
+      imageUrl: line.product?.imageUrl ?? null,
       unitCost:
         line.vendorProduct?.unitCost ??
         line.unitCost ??
@@ -165,14 +168,11 @@ export function ReceivePurchaseOrderModal({
                     className="border-b last:border-b-0"
                   >
                     <td className="py-3">
-                      <div className="font-medium">
-                        {row.productName}
-                      </div>
-                      {row.sku && (
-                        <div className="text-xs text-gray-500">
-                          SKU: {row.sku}
-                        </div>
-                      )}
+                      <ProductIdentity
+                        name={row.productName}
+                        sku={row.sku}
+                        imageUrl={row.imageUrl}
+                      />
                     </td>
 
                     <td className="py-3 text-right">

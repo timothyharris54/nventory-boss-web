@@ -15,6 +15,7 @@ import {
 import type { ReorderRecommendationRow } from './types';
 import type { VendorProduct } from '../vendor-products/vendor-product-types';
 import { routes } from '../../lib/constants/routes';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 /*  Helper Functions */
 function getUrgency(days: string | null) {
@@ -375,7 +376,14 @@ export default function RecommendationsPage() {
 
                     <td className="px-4 py-3">{row.product?.sku ?? '—'}</td>
 
-                    <td className="px-4 py-3">{row.product?.name ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <ProductIdentity
+                        name={row.product?.name}
+                        sku={row.product?.sku}
+                        imageUrl={row.product?.imageUrl}
+                        fallbackName="—"
+                      />
+                    </td>
 
                     <td className="px-4 py-3">
                       <select

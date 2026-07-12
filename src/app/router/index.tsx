@@ -1,6 +1,7 @@
 import { Navigate, useRoutes } from 'react-router-dom';
 import AppShell from '../layouts/app-shell';
 import DashboardPage from '../../features/dashboard/dashboard-page';
+import ProductMaintenancePage from '../../features/products/product-maintenance-page';
 import InventoryPage from '../../features/inventory/inventory-page';
 import LedgerPage from '../../features/ledger/ledger-page';
 import ReservationsPage from '../../features/reservations/reservations-page';
@@ -36,6 +37,10 @@ export function AppRouter() {
           children: [
             { index: true, element: <Navigate to={routes.dashboard} replace /> },
             { path: routes.dashboard.slice(1), element: <DashboardPage /> },
+            {
+              path: routes.productMaintenance.slice(1),
+              element: <ProductMaintenancePage />,
+            },
             { path: routes.inventory.slice(1), element: <InventoryPage /> },
             { path: routes.ledger.slice(1), element: <LedgerPage /> },
             { path: routes.reservations.slice(1), element: <ReservationsPage /> },
