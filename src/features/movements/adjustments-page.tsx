@@ -7,6 +7,7 @@ import { createInventoryAdjustment } from './api';
 import type { CreateAdjustmentRequest } from './adjustments-types';
 import { toast } from 'sonner';
 import { ADJUSTMENT_REASON_CODE_OPTIONS } from './reason-code-types';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 export default function AdjustmentsPage() {
   const queryClient = useQueryClient();
@@ -98,15 +99,15 @@ export default function AdjustmentsPage() {
         <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
                 Selected Product
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-900">
-                {selectedProduct.name}
-              </h2>
-              <p className="text-sm text-slate-600">
-                SKU: {selectedProduct.sku}
-              </p>
+              <ProductIdentity
+                name={selectedProduct.name}
+                sku={selectedProduct.sku}
+                imageUrl={selectedProduct.imageUrl}
+                size="md"
+              />
             </div>
 
             <button

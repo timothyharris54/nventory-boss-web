@@ -6,6 +6,7 @@ import type { ProductLookupItem } from '../inventory/product-types';
 import { ProductLookupPanel } from '../inventory/product-lookup-panel';
 import { LOCATION_OPTIONS } from '../inventory/locations';
 import { QuantityBadge } from '../../components/data-display/quantity-badge';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 import { formatDate } from '../../lib/utils/format-date';
 
 export default function LedgerPage() {
@@ -56,15 +57,15 @@ export default function LedgerPage() {
         <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
                 Selected Product
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-900">
-                {selectedProduct.name}
-              </h2>
-              <p className="text-sm text-slate-600">
-                SKU: {selectedProduct.sku}
-              </p>
+              <ProductIdentity
+                name={selectedProduct.name}
+                sku={selectedProduct.sku}
+                imageUrl={selectedProduct.imageUrl}
+                size="md"
+              />
             </div>
 
             <button
@@ -171,7 +172,12 @@ export default function LedgerPage() {
                     {row.product?.sku ?? selectedProduct?.sku ?? '—'}
                   </td>
                   <td className="px-4 py-3">
-                    {row.product?.name ?? selectedProduct?.name ?? '—'}
+                    <ProductIdentity
+                      name={row.product?.name ?? selectedProduct?.name}
+                      sku={row.product?.sku ?? selectedProduct?.sku}
+                      imageUrl={row.product?.imageUrl ?? selectedProduct?.imageUrl}
+                      fallbackName="—"
+                    />
                   </td>
                   <td className="px-4 py-3">{row.locationCode}</td>
                   <td className="px-4 py-3">

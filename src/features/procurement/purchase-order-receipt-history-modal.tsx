@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getPurchaseOrderById } from './api';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 type Props = {
   purchaseOrderId: string;
@@ -103,12 +104,12 @@ export function PurchaseOrderReceiptHistoryModal({
                       {receipt.lines.map((line) => (
                         <tr key={line.id} className="border-b last:border-b-0">
                           <td className="py-2">
-                            {line.product?.name ?? `Product ${line.productId}`}
-                            {line.product?.sku && (
-                              <div className="text-xs text-gray-500">
-                                SKU: {line.product.sku}
-                              </div>
-                            )}
+                            <ProductIdentity
+                              name={line.product?.name}
+                              sku={line.product?.sku}
+                              imageUrl={line.product?.imageUrl}
+                              fallbackName={`Product ${line.productId}`}
+                            />
                           </td>
                           <td className="py-2 text-right">
                             {line.receivedQty}

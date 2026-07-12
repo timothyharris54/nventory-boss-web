@@ -6,6 +6,7 @@ import type {
   PurchaseOrderDetail,
   UpdatePurchaseOrderDto,
 } from './purchase-order-types';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 type Props = {
   purchaseOrder: PurchaseOrderDetail;
@@ -30,6 +31,7 @@ export function EditPurchaseOrderModal({
       purchaseOrderLineId: line.id,
       productName: line.product.name,
       sku: line.product.sku,
+      imageUrl: line.product.imageUrl,
       orderedQty: line.orderedQty,
     })),
   );
@@ -164,10 +166,11 @@ export function EditPurchaseOrderModal({
                   return (
                     <tr key={line.purchaseOrderLineId} className="border-t">
                       <td className="px-3 py-3">
-                        <div className="font-medium">{line.productName}</div>
-                        <div className="text-xs text-gray-500">
-                          SKU: {line.sku}
-                        </div>
+                        <ProductIdentity
+                          name={line.productName}
+                          sku={line.sku}
+                          imageUrl={line.imageUrl}
+                        />
                       </td>
 
                       <td className="px-3 py-3 text-right">

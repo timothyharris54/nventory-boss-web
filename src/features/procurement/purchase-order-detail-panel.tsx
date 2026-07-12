@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useState, type ReactNode } from 'react';
 import { EditPurchaseOrderModal } from './edit-purchase-order-modal';
 import type { PurchaseOrderDetail } from './purchase-order-types';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 type Props = {
   purchaseOrderId: string;
@@ -215,10 +216,11 @@ export function PurchaseOrderDetailPanel({
                 return (
                   <tr key={line.id} className="border-t">
                     <td className="px-3 py-3">
-                      <div className="font-medium">{line.product.name}</div>
-                      <div className="text-xs text-gray-500">
-                        SKU: {line.product.sku}
-                      </div>
+                      <ProductIdentity
+                        name={line.product.name}
+                        sku={line.product.sku}
+                        imageUrl={line.product.imageUrl}
+                      />
                     </td>
 
                     <td className="px-3 py-3 text-right">{line.orderedQty}</td>
@@ -276,9 +278,12 @@ export function PurchaseOrderDetailPanel({
                       key={line.id}
                       className="flex justify-between py-1 text-sm"
                     >
-                      <span>
-                        {line.product?.name ?? `Product ${line.productId}`}
-                      </span>
+                      <ProductIdentity
+                        name={line.product?.name}
+                        sku={line.product?.sku}
+                        imageUrl={line.product?.imageUrl}
+                        fallbackName={`Product ${line.productId}`}
+                      />
 
                       <span className="font-medium">
                         {line.receivedQty}

@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSalesOrderById, searchSalesOrders } from './api';
 import type { SalesOrderLine, SalesOrderRow } from './sales-order-types';
+import { ProductIdentity } from '../../components/data-display/product-identity';
 
 const PAGE_SIZE = 25;
 const MIN_SEARCH_LENGTH = 2;
@@ -240,12 +241,11 @@ function SalesOrderDetailPanel({
                         {salesOrderLines.map((line) => (
                           <tr key={line.id} className="border-t border-slate-200">
                             <td className="px-3 py-3">
-                              <div className="font-medium text-slate-900">
-                                {line.productName ?? 'Unknown product'}
-                              </div>
-                              <div className="text-xs text-slate-500">
-                                SKU: {line.sku ?? 'N/A'}
-                              </div>
+                              <ProductIdentity
+                                name={line.productName}
+                                sku={line.sku}
+                                imageUrl={line.imageUrl}
+                              />
                             </td>
                             <td className="px-3 py-3 text-right">
                               {line.quantity ?? '0'}

@@ -3,6 +3,7 @@ export type ProductLookupItem = {
   accountId: string;
   sku: string;
   name: string;
+  imageUrl: string | null;
   status: string;
   isVariant: boolean;
   parentProductId: string | null;
@@ -14,6 +15,26 @@ export type ProductLookupFilters = {
   q?: string;
   take?: number;
   skip?: number;
+};
+
+export type CreateProductDto = {
+  sku: string;
+  name: string;
+  imageUrl?: string | null;
+  parentProductId?: string | null;
+};
+
+export type UpdateProductDto = Partial<CreateProductDto>;
+
+export type PublishProductRequest = {
+  connectionIds: string[];
+};
+
+export type PublishProductResponse = {
+  message?: string;
+  productId?: string;
+  connectionIds?: string[];
+  results?: unknown;
 };
 
 export type ProductSearchResult = {

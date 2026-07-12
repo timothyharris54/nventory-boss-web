@@ -27,6 +27,7 @@ type NavSection = {
 
 const navItems: NavItem[] = [
   { to: routes.dashboard, label: 'Dashboard' },
+  { to: routes.productMaintenance, label: 'Product Maintenance' },
   { to: routes.inventory, label: 'Inventory' },
   { to: routes.ledger, label: 'Ledger' },
   { to: routes.reservations, label: 'Reservations' },
