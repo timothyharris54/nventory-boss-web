@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+src/.env
+src/.env.*
+node_modules
+dist
+*.log
+Dockerfile*
+compose*.yml
+compose*.yaml
