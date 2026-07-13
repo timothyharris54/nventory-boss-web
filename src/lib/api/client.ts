@@ -1,7 +1,7 @@
 import { getAccessToken, clearAuthSession } from '../../features/auth/auth-store';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '/api';
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';

@@ -29,6 +29,7 @@ type ProductFormState = {
   sku: string;
   name: string;
   imageUrl: string;
+  excludeFromPlanning: boolean;
 };
 
 type VendorAssignmentState = {
@@ -45,6 +46,7 @@ const emptyProductForm: ProductFormState = {
   sku: '',
   name: '',
   imageUrl: '',
+  excludeFromPlanning: false,
 };
 
 const emptyVendorAssignment: VendorAssignmentState = {
@@ -67,6 +69,7 @@ function toProductForm(product: ProductLookupItem): ProductFormState {
     sku: product.sku,
     name: product.name,
     imageUrl: product.imageUrl ?? '',
+    excludeFromPlanning: product.excludeFromPlanning,
   };
 }
 
@@ -75,6 +78,7 @@ function buildCreateProductPayload(form: ProductFormState): CreateProductDto {
     sku: form.sku.trim(),
     name: form.name.trim(),
     imageUrl: toOptionalString(form.imageUrl),
+    excludeFromPlanning: form.excludeFromPlanning,
   };
 }
 
@@ -83,6 +87,7 @@ function buildUpdateProductPayload(form: ProductFormState): UpdateProductDto {
     sku: form.sku.trim(),
     name: form.name.trim(),
     imageUrl: toOptionalString(form.imageUrl) ?? null,
+    excludeFromPlanning: form.excludeFromPlanning,
   };
 }
 
@@ -429,6 +434,41 @@ export default function ProductMaintenancePage() {
                 }
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
               />
+            </div>
+
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 md:col-span-2">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={productForm.excludeFromPlanning}
+                  onChange={(event) =>
+                    setProductForm((current) => ({
+                      ...current,
+                      excludeFromPlanning: event.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                <span className="text-sm font-medium text-slate-900">
+                  Exclude from planning
+                </span>
+              </label>
+              <span
+                tabIndex={0}
+                aria-label="More information about excluding a product from planning"
+                aria-describedby="exclude-from-planning-tooltip"
+                className="group relative inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-slate-300 text-xs font-semibold text-slate-500 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              >
+                ?
+                <span
+                  id="exclude-from-planning-tooltip"
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-normal text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+                >
+                  Ignore this product during inventory planning, such as for a
+                  one-time buy.
+                </span>
+              </span>
             </div>
           </div>
 
