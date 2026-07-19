@@ -1,6 +1,6 @@
 export const routes = {
   login: '/login',
-  passwordReset: '/password-reset',
+  passwordReset: '/password-reset/request',
   dashboard: '/dashboard',
   productMaintenance: '/products',
   inventory: '/inventory',
