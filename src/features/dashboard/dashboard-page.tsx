@@ -25,6 +25,17 @@ export default function DashboardPage() {
       return <WarehouseManagerDashboard />;
     case 'warehouse_user':
       return <WarehouseUserDashboard />;
+    case 'account_admin':
+      return (
+        <DashboardFrame
+          title="Account Administration"
+          subtitle="Manage access for the people in your organization."
+        >
+          <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+            Use User Maintenance to add users, update their roles, or disable access.
+          </div>
+        </DashboardFrame>
+      );
     case 'system_admin':
       return <SystemAdminDashboard />;
     default:

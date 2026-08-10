@@ -43,11 +43,29 @@ const navItems: NavItem[] = [
 const navSections: NavSection[] = [
   { items: navItems },
   {
-    label: 'Admin',
-    allowedRoles: ['system_admin'],
+    label: 'Admin Tools',
+    allowedRoles: ['system_admin', 'account_admin'],
     items: [
-      { to: routes.ecommerceConnections, label: 'Ecommerce Setup' },
-      { to: routes.users, label: 'User Maintenance' },
+      {
+        to: routes.ecommerceConnections,
+        label: 'Ecommerce Setup',
+        allowedRoles: ['system_admin'],
+      },
+      {
+        to: routes.users,
+        label: 'User Maintenance',
+        allowedRoles: ['system_admin', 'account_admin'],
+      },
+      {
+        to: routes.addresses,
+        label: 'Address Maintenance',
+        allowedRoles: ['system_admin', 'account_admin'],
+      },
+      {
+        to: routes.subscriptionMaintenance,
+        label: 'Subscription Maintenance',
+        allowedRoles: ['system_admin'],
+      },
     ],
   },
 ];

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getIdentity } from '../auth/auth-store';
 import {
   createUser,
   disableUser,
@@ -66,6 +67,7 @@ function getSelectedRoleCountLabel(count: number) {
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const identity = getIdentity();
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(true);
   const [formMode, setFormMode] = useState<UserFormMode>('create');
@@ -85,8 +87,14 @@ export default function UsersPage() {
   });
 
   const roles = useMemo(
-    () => [...(rolesQuery.data ?? [])].sort((a, b) => roleLabel(a).localeCompare(roleLabel(b))),
-    [rolesQuery.data],
+    () =>
+      [...(rolesQuery.data ?? [])]
+        .filter(
+          (role) =>
+            identity?.roleCode === 'system_admin' || role.code !== 'system_admin',
+        )
+        .sort((a, b) => roleLabel(a).localeCompare(roleLabel(b))),
+    [identity?.roleCode, rolesQuery.data],
   );
 
   const filteredUsers = useMemo(() => {
@@ -226,7 +234,7 @@ export default function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">User Maintenance</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Manage account users, active status, and role access.
+            Manage users, active status, and role access within your organization.
           </p>
         </div>
 

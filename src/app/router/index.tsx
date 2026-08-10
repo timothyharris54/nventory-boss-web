@@ -13,7 +13,9 @@ import PurchaseOrdersPage from '../../features/procurement/purchase-orders-page'
 import VendorProductsPage from '../../features/vendor-products/vendor-products-page';
 import EcommerceConnectionsPage from '../../features/setup/ecommerce-connections-page';
 import UsersPage from '../../features/users/users-page';
+import AddressesPage from '../../features/addresses/addresses-page';
 import VendorsPage from '../../features/vendors/vendors-page';
+import SubscriptionMaintenancePage from '../../features/subscriptions/subscription-maintenance-page';
 import LoginPage from '../../features/auth/login-page';
 import RequireAuth from '../../features/auth/require-auth';
 import { routes } from '../../lib/constants/routes';
@@ -68,8 +70,16 @@ export function AppRouter() {
               element: <UsersPage />,
             },
             {
+              path: routes.addresses.slice(1),
+              element: <AddressesPage />,
+            },
+            {
               path: routes.vendors.slice(1),
               element: <VendorsPage />,
+            },
+            {
+              path: routes.subscriptionMaintenance.slice(1),
+              element: <SubscriptionMaintenancePage />,
             },
           ],
         },

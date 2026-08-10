@@ -12,7 +12,7 @@ x-api-environment: &api-environment
   RESEND_API_KEY: ${RESEND_API_KEY:-}
 
 x-api-build: &api-build
-  context: ../stockpilot-api
+  context: ../nventoryboss-api
   dockerfile: ../nventory-boss-web/docker/api.Dockerfile
 
 services:

@@ -1,6 +1,6 @@
 export const routes = {
   login: '/login',
-  passwordReset: '/password-reset',
+  passwordReset: '/reset-password',
   dashboard: '/dashboard',
   productMaintenance: '/products',
   inventory: '/inventory',
@@ -14,5 +14,7 @@ export const routes = {
   vendorProducts: '/vendor-products',
   ecommerceConnections: '/setup/ecommerce-channels',
   users: '/users',
+  addresses: '/addresses',
+  subscriptionMaintenance: '/admin/subscriptions',
   vendors: '/vendors',
 } as const;
