@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getEcommerceConnections } from '../setup/api';
 import type { SalesRefreshResponse } from './api';
 import { refreshSales } from './api';
 
@@ -36,7 +37,7 @@ const feedbackClasses = {
 function getErrorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
-    : 'Unable to synchronize WooCommerce data.';
+    : 'Unable to synchronize channel data.';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -81,7 +82,10 @@ function formatCount(count: number, singularLabel: string, pluralLabel: string) 
   return `${count.toLocaleString()} ${label}`;
 }
 
-function getSalesRefreshResultMessage(response: SalesRefreshResponse) {
+function getSalesRefreshResultMessage(
+  response: SalesRefreshResponse,
+  channelName: string,
+) {
   const source = response.summary ?? response;
   const orderCount = findNumberByKey(source, [
     'ordersProcessed',
@@ -125,11 +129,11 @@ function getSalesRefreshResultMessage(response: SalesRefreshResponse) {
   ].filter(Boolean);
 
   if (counts.length > 0) {
-    return `WooCommerce synchronization complete: ${counts.join(', ')}.`;
+    return `${channelName} synchronization complete: ${counts.join(', ')}.`;
   }
   return (
     response.message ??
-    'WooCommerce products and orders synchronized and replenishment updated.'
+    `${channelName} products and orders synchronized and replenishment updated.`
   );
 }
 
@@ -137,11 +141,30 @@ export function SalesRefreshPanel() {
   const queryClient = useQueryClient();
   const [refreshFeedback, setRefreshFeedback] =
     useState<RefreshFeedback | null>(null);
+  const [selectedConnectionId, setSelectedConnectionId] = useState('');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const connectionsQuery = useQuery({
+    queryKey: ['ecommerce-connections'],
+    queryFn: getEcommerceConnections,
+  });
+  const configuredChannels = (connectionsQuery.data ?? []).filter(
+    (connection) => connection.isActive,
+  );
+  const selectedChannel = configuredChannels.find(
+    (connection) => connection.id === selectedConnectionId,
+  );
+
   const refreshMutation = useMutation({
-    mutationFn: () => refreshSales(DEFAULT_SALES_REFRESH_PAYLOAD),
+    mutationFn: (connectionId: string) => {
+      const connection = configuredChannels.find((item) => item.id === connectionId);
+      return refreshSales({
+        ...DEFAULT_SALES_REFRESH_PAYLOAD,
+        connectionId,
+        locationCode: connection?.defaultLocationCode || 'MAIN',
+      });
+    },
     onMutate: () => {
       setRefreshFeedback(null);
       setElapsedSeconds(0);
@@ -152,7 +175,8 @@ export function SalesRefreshPanel() {
           queryClient.invalidateQueries({ queryKey }, { throwOnError: true }),
         ),
       );
-      const message = getSalesRefreshResultMessage(response);
+      const channelName = selectedChannel?.displayName ?? 'Channel';
+      const message = getSalesRefreshResultMessage(response, channelName);
       const failedReloadCount = results.filter(
         (result) => result.status === 'rejected',
       ).length;
@@ -168,7 +192,7 @@ export function SalesRefreshPanel() {
           message: warningMessage,
         });
         toast.warning(
-          'WooCommerce synchronized, but dashboard data did not fully reload.',
+          `${channelName} synchronized, but dashboard data did not fully reload.`,
           {
             closeButton: true,
             duration: Infinity,
@@ -198,6 +222,7 @@ export function SalesRefreshPanel() {
         duration: Infinity,
       });
     },
+    onSettled: () => setSelectedConnectionId(''),
   });
 
   useEffect(() => {
@@ -225,34 +250,56 @@ export function SalesRefreshPanel() {
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-semibold text-slate-900">
-            WooCommerce Synchronization
-          </h2>
+          <h2 className="font-semibold text-slate-900">Channel Synchronization</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Pull the latest products and orders, rebuild demand history, and update
-            replenishment.
+            Select a configured channel to pull its latest products and orders,
+            rebuild demand history, and update replenishment.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => refreshMutation.mutate()}
-          disabled={refreshMutation.isPending}
-          className="inline-flex min-h-10 items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-        >
-          {refreshMutation.isPending
-            ? 'Synchronizing...'
-            : 'Synchronize WooCommerce'}
-        </button>
+        <label className="text-sm font-semibold text-slate-700">
+          <span className="sr-only">Synchronize channel</span>
+          <select
+            aria-label="Select a channel to synchronize"
+            value={selectedConnectionId}
+            disabled={refreshMutation.isPending || connectionsQuery.isLoading}
+            onChange={(event) => {
+              const connectionId = event.target.value;
+              if (!connectionId) return;
+              setSelectedConnectionId(connectionId);
+              refreshMutation.mutate(connectionId);
+            }}
+            className="min-h-10 min-w-56 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+          >
+            <option value="">
+              {connectionsQuery.isLoading
+                ? 'Loading channels…'
+                : configuredChannels.length
+                  ? 'Synchronize a channel…'
+                  : 'No active channels configured'}
+            </option>
+            {configuredChannels.map((connection) => (
+              <option key={connection.id} value={connection.id}>
+                {connection.displayName} ({connection.provider})
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <p className="mt-3 text-xs text-slate-500">
-        Uses MAIN and a 120-day lookback.
+        Uses the channel's default location (or MAIN) and a 120-day lookback.
       </p>
+      {connectionsQuery.error ? (
+        <p className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+          Unable to load configured channels: {getErrorMessage(connectionsQuery.error)}
+        </p>
+      ) : null}
       {refreshMutation.isPending ? (
         <div className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-slate-800">
           <p className="font-medium text-sky-900">
-            Synchronizing products, orders, and dashboard data...
+            Synchronizing {selectedChannel?.displayName ?? 'channel'} products,
+            orders, and dashboard data...
           </p>
           <p className="mt-1 text-xs text-slate-600">
             This may take up to a minute. Elapsed: {elapsedSeconds}s.

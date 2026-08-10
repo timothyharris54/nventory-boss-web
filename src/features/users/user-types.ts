@@ -5,6 +5,7 @@ export type UserRoleCode =
   | 'planner'
   | 'warehouse_manager'
   | 'warehouse_user'
+  | 'account_admin'
   | 'system_admin';
 
 export type UserRole = {

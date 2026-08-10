@@ -1,6 +1,7 @@
 import { apiFetch } from '../../lib/api/client';
 
 export type SalesRefreshRequest = {
+  connectionId: string;
   runReplenishment: boolean;
   dryRunReplenishment: boolean;
   locationCode: string;
