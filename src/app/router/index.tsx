@@ -18,6 +18,7 @@ import VendorsPage from '../../features/vendors/vendors-page';
 import SubscriptionMaintenancePage from '../../features/subscriptions/subscription-maintenance-page';
 import LoginPage from '../../features/auth/login-page';
 import RequireAuth from '../../features/auth/require-auth';
+import RequireRole from '../../features/auth/require-role';
 import { routes } from '../../lib/constants/routes';
 
 export function AppRouter() {
@@ -63,7 +64,11 @@ export function AppRouter() {
             },
             {
               path: routes.ecommerceConnections.slice(1),
-              element: <EcommerceConnectionsPage />,
+              element: (
+                <RequireRole allowedRoles={['system_admin', 'account_admin']}>
+                  <EcommerceConnectionsPage />
+                </RequireRole>
+              ),
             },
             {
               path: routes.users.slice(1),

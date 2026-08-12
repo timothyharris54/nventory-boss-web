@@ -49,7 +49,7 @@ const navSections: NavSection[] = [
       {
         to: routes.ecommerceConnections,
         label: 'Ecommerce Setup',
-        allowedRoles: ['system_admin'],
+        allowedRoles: ['system_admin', 'account_admin'],
       },
       {
         to: routes.users,
