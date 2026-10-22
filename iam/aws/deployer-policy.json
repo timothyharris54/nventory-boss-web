@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InspectDeploymentResources",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ecr:DescribeImages",
+        "ecr:DescribeRepositories",
+        "rds:DescribeDBInstances",
+        "route53:GetChange",
+        "route53:ListResourceRecordSets",
+        "ssm:DescribeInstanceInformation",
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DeployToNventoryBossInstances",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": [
+        "arn:aws:ec2:us-east-1:792233689386:instance/i-00910a357e4f1901a",
+        "arn:aws:ec2:us-east-1:792233689386:instance/i-0bf136cbc79920266",
+        "arn:aws:ssm:us-east-1::document/AWS-RunShellScript"
+      ]
+    },
+    {
+      "Sid": "ManageApplicationDns",
+      "Effect": "Allow",
+      "Action": "route53:ChangeResourceRecordSets",
+      "Resource": "arn:aws:route53:::hostedzone/Z04765502OCUFXQ75UIG4"
+    }
+  ]
+}

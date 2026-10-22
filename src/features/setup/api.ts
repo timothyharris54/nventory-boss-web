@@ -34,11 +34,14 @@ export function updateEcommerceConnection(
   );
 }
 
-export function testWoocommerceConnection(): Promise<EcommerceConnectionTestResponse> {
+export function testWoocommerceConnection(
+  connectionId: string,
+): Promise<EcommerceConnectionTestResponse> {
   return apiFetch<EcommerceConnectionTestResponse>(
     '/ecommerce/woocommerce/test-connection',
     {
       method: 'POST',
+      body: { connectionId },
     },
   );
 }

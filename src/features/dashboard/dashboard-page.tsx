@@ -30,6 +30,7 @@ export default function DashboardPage() {
         <DashboardFrame
           title="Account Administration"
           subtitle="Manage access for the people in your organization."
+          showSalesRefreshPanel
         >
           <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
             Use User Maintenance to add users, update their roles, or disable access.

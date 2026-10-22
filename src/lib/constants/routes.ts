@@ -13,6 +13,7 @@ export const routes = {
   purchaseOrders: '/procurement/purchase-orders',
   vendorProducts: '/vendor-products',
   ecommerceConnections: '/setup/ecommerce-channels',
+  replenishmentSettings: '/admin/replenishment-settings',
   users: '/users',
   addresses: '/addresses',
   subscriptionMaintenance: '/admin/subscriptions',

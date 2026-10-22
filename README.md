@@ -70,7 +70,7 @@ Migrations run automatically before the API starts. To populate a new database
 with the current Prisma seed data, run this explicitly after startup:
 
 ```bash
-docker compose run --rm api npx prisma db seed
+docker compose run --rm api npx tsx prisma/seed.ts
 ```
 
 Useful operations:
@@ -85,6 +85,13 @@ docker compose down
 `docker compose down` preserves database data. Adding `--volumes` deletes the
 database and should only be used when a complete reset is intended. Back up the
 database volume to storage outside the Docker host before production use.
+
+## AWS releases
+
+The EC2/ECR deployment and demo-to-production promotion workflow is documented
+in [`deploy/aws/README.md`](deploy/aws/README.md). It uses the existing demo and
+production EC2/RDS environments, runs Prisma migrations per environment, and
+promotes immutable image tags rather than rebuilding production artifacts.
 
 ## Vite reference
 

@@ -24,11 +24,13 @@ import {
   updateVendorProduct,
 } from '../vendor-products/vendor-products-api';
 import type { VendorProduct } from '../vendor-products/vendor-product-types';
+import { getProductCategories } from '../planning-settings/api';
 
 type ProductFormState = {
   sku: string;
   name: string;
   imageUrl: string;
+  categoryId: string;
   excludeFromPlanning: boolean;
 };
 
@@ -46,6 +48,7 @@ const emptyProductForm: ProductFormState = {
   sku: '',
   name: '',
   imageUrl: '',
+  categoryId: '',
   excludeFromPlanning: false,
 };
 
@@ -69,6 +72,7 @@ function toProductForm(product: ProductLookupItem): ProductFormState {
     sku: product.sku,
     name: product.name,
     imageUrl: product.imageUrl ?? '',
+    categoryId: product.category?.id ?? '',
     excludeFromPlanning: product.excludeFromPlanning,
   };
 }
@@ -78,6 +82,7 @@ function buildCreateProductPayload(form: ProductFormState): CreateProductDto {
     sku: form.sku.trim(),
     name: form.name.trim(),
     imageUrl: toOptionalString(form.imageUrl),
+    categoryId: form.categoryId || null,
     excludeFromPlanning: form.excludeFromPlanning,
   };
 }
@@ -87,6 +92,7 @@ function buildUpdateProductPayload(form: ProductFormState): UpdateProductDto {
     sku: form.sku.trim(),
     name: form.name.trim(),
     imageUrl: toOptionalString(form.imageUrl) ?? null,
+    categoryId: form.categoryId || null,
     excludeFromPlanning: form.excludeFromPlanning,
   };
 }
@@ -126,6 +132,11 @@ export default function ProductMaintenancePage() {
   const connectionsQuery = useQuery({
     queryKey: ['ecommerce-connections'],
     queryFn: getEcommerceConnections,
+  });
+
+  const categoriesQuery = useQuery({
+    queryKey: ['product-categories'],
+    queryFn: getProductCategories,
   });
 
   const vendorProductsQuery = useQuery<VendorProduct[]>({
@@ -434,6 +445,44 @@ export default function ProductMaintenancePage() {
                 }
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label
+                htmlFor="productCategory"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Product Category
+              </label>
+              <select
+                id="productCategory"
+                value={productForm.categoryId}
+                onChange={(event) =>
+                  setProductForm((current) => ({
+                    ...current,
+                    categoryId: event.target.value,
+                  }))
+                }
+                disabled={categoriesQuery.isLoading}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500 disabled:bg-slate-100"
+              >
+                <option value="">Use account defaults</option>
+                {categoriesQuery.data?.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                Category settings apply unless the product has its own rule.
+              </p>
+              {categoriesQuery.error ? (
+                <p className="mt-1 text-xs text-red-700">
+                  {categoriesQuery.error instanceof Error
+                    ? categoriesQuery.error.message
+                    : 'Unable to load categories.'}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 md:col-span-2">
