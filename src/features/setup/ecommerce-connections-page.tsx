@@ -30,6 +30,7 @@ type ConfigField = {
   type?: FieldType;
   required?: boolean;
   placeholder?: string;
+  helpText?: string;
   options?: FieldOption[];
 };
 
@@ -73,13 +74,25 @@ const providerConfigs: ProviderConfig[] = [
     channelKey: 'shopify',
     authType: 'api_key',
     storeUrlLabel: 'Shop domain',
-    externalStoreIdLabel: 'Shop ID',
+    externalStoreIdLabel: 'Shop ID (optional; not the Client ID)',
     credentialFields: [
       {
-        key: 'accessToken',
-        label: 'Admin API access token',
+        key: 'clientId',
+        label: 'Client ID',
+        helpText: 'Use this together with the Client secret.',
+      },
+      {
+        key: 'clientSecret',
+        label: 'Client secret',
         type: 'password',
-        required: true,
+        helpText: 'Use this together with the Client ID.',
+      },
+      {
+        key: 'accessToken',
+        label: 'Admin API access token (alternative)',
+        type: 'password',
+        helpText:
+          'Use this instead of Client ID and Client secret when Shopify provides a direct Admin API token.',
       },
       {
         key: 'webhookSecret',
@@ -203,7 +216,11 @@ function getConnectionStatus(
   if (connection.lastConnectionStatus === 'failed') {
     return 'needs_configuration';
   }
-  if (connection.lastConnectionStatus === 'passed' || connection.hasCredentials) {
+  if (
+    connection.lastConnectionStatus === 'passed' ||
+    connection.lastConnectionStatus === 'connected' ||
+    connection.hasCredentials
+  ) {
     return 'connected';
   }
   return 'needs_configuration';
@@ -501,6 +518,24 @@ export default function EcommerceConnectionsPage() {
       return;
     }
 
+    if (form.provider === 'shopify') {
+      const accessToken = form.credentials.accessToken?.trim();
+      const clientId = form.credentials.clientId?.trim();
+      const clientSecret = form.credentials.clientSecret?.trim();
+      const enteredAuthentication = accessToken || clientId || clientSecret;
+
+      if (
+        (formMode === 'create' || enteredAuthentication) &&
+        !accessToken &&
+        !(clientId && clientSecret)
+      ) {
+        toast.error(
+          'Enter an Admin API access token, or enter both the Shopify Client ID and Client secret.',
+        );
+        return;
+      }
+    }
+
     if (formMode === 'create') {
       createMutation.mutate(payload);
       return;
@@ -535,6 +570,9 @@ export default function EcommerceConnectionsPage() {
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
           required={formMode === 'create' && field.required}
         />
+        {field.helpText ? (
+          <p className="mt-1 text-xs text-slate-500">{field.helpText}</p>
+        ) : null}
       </div>
     );
   }
@@ -788,7 +826,7 @@ export default function EcommerceConnectionsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => testMutation.mutate()}
+                            onClick={() => testMutation.mutate(connection.id)}
                             disabled={
                               connection.provider !== 'woocommerce' ||
                               !connection.isActive ||

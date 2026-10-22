@@ -36,7 +36,7 @@ export function DashboardFrame({
   title,
   subtitle,
   children,
-  showSalesRefreshPanel = true,
+  showSalesRefreshPanel = false,
 }: DashboardFrameProps) {
   return (
     <div className="p-4 md:p-6">

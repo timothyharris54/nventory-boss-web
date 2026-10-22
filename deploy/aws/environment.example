@@ -1,0 +1,18 @@
+# Stored as /opt/nventoryboss/deploy/environment on each EC2 instance (mode 600).
+ECR_REGISTRY=792233689386.dkr.ecr.us-east-1.amazonaws.com
+IMAGE_TAG=replace-with-release-tag
+
+# Production uses 127.0.0.1 behind Caddy. Demo uses 0.0.0.0 so its ALB can
+# reach instance port 8080; the security group restricts access to the ALB.
+WEB_BIND_ADDRESS=127.0.0.1
+WEB_PORT=8080
+
+DATABASE_URL=postgresql://user:password@database.example:5432/nventory
+JWT_SECRET=replace-with-at-least-32-random-bytes
+APP_BASE_URL=https://app.nventoryboss.com
+PASSWORD_RESET_URL_BASE=https://app.nventoryboss.com/reset-password
+CORS_ORIGINS=https://app.nventoryboss.com
+
+EMAIL_PROVIDER=console
+EMAIL_FROM=
+RESEND_API_KEY=

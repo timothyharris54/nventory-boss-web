@@ -6,6 +6,7 @@ export type ProductLookupItem = {
   imageUrl: string | null;
   status: string;
   excludeFromPlanning: boolean;
+  category: { id: string; name: string } | null;
   isVariant: boolean;
   parentProductId: string | null;
   createdAt: string;
@@ -24,6 +25,7 @@ export type CreateProductDto = {
   imageUrl?: string | null;
   parentProductId?: string | null;
   excludeFromPlanning?: boolean;
+  categoryId?: string | null;
 };
 
 export type UpdateProductDto = Partial<CreateProductDto>;

@@ -9,6 +9,48 @@ type RequestOptions = {
   token?: string;
 };
 
+type ApiErrorResponse = {
+  message?: string | string[];
+  error?: string;
+  response?: string;
+  status?: number;
+};
+
+function getApiErrorMessage(parsed: ApiErrorResponse, fallback: string): string {
+  const message = Array.isArray(parsed.message)
+    ? parsed.message.join(' ')
+    : parsed.message;
+  const genericHttpErrors = new Set([
+    'Bad Request',
+    'Unauthorized',
+    'Forbidden',
+    'Not Found',
+    'Internal Server Error',
+    'Bad Gateway',
+  ]);
+  const errorDetail = parsed.error?.trim();
+  const upstreamDetail =
+    parsed.response?.trim() ||
+    (errorDetail && !genericHttpErrors.has(errorDetail)
+      ? errorDetail
+      : undefined);
+
+  if (!upstreamDetail) {
+    return message || fallback;
+  }
+
+  let detail = upstreamDetail;
+  try {
+    const upstream = JSON.parse(upstreamDetail) as { message?: string };
+    if (upstream.message) detail = upstream.message;
+  } catch {
+    // The upstream response may be plain text (for example, a proxy error).
+  }
+
+  const status = parsed.status ? ` (upstream ${parsed.status})` : '';
+  return `${message || 'Request failed'}${status}: ${detail}`;
+}
+
 function serializeBody(body: unknown): string | undefined {
   if (body === undefined) {
     return undefined;
@@ -44,18 +86,14 @@ export async function apiFetch<T>(
       throw new Error(`Request failed (${response.status})`);
     }
 
-    let parsed: { message?: string | string[] };
+    let parsed: ApiErrorResponse;
     try {
-      parsed = JSON.parse(text) as { message?: string | string[] };
+      parsed = JSON.parse(text) as ApiErrorResponse;
     } catch {
       throw new Error(text);
     }
 
-    if (Array.isArray(parsed.message)) {
-      throw new Error(parsed.message.join(' '));
-    }
-
-    throw new Error(parsed.message || text);
+    throw new Error(getApiErrorMessage(parsed, text));
   }
 
   if (response.status === 204) {

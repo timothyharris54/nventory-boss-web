@@ -16,6 +16,7 @@ import UsersPage from '../../features/users/users-page';
 import AddressesPage from '../../features/addresses/addresses-page';
 import VendorsPage from '../../features/vendors/vendors-page';
 import SubscriptionMaintenancePage from '../../features/subscriptions/subscription-maintenance-page';
+import ReplenishmentSettingsPage from '../../features/planning-settings/replenishment-settings-page';
 import LoginPage from '../../features/auth/login-page';
 import RequireAuth from '../../features/auth/require-auth';
 import RequireRole from '../../features/auth/require-role';
@@ -67,6 +68,14 @@ export function AppRouter() {
               element: (
                 <RequireRole allowedRoles={['system_admin', 'account_admin']}>
                   <EcommerceConnectionsPage />
+                </RequireRole>
+              ),
+            },
+            {
+              path: routes.replenishmentSettings.slice(1),
+              element: (
+                <RequireRole allowedRoles={['system_admin', 'account_admin']}>
+                  <ReplenishmentSettingsPage />
                 </RequireRole>
               ),
             },

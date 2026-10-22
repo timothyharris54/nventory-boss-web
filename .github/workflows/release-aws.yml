@@ -1,0 +1,93 @@
+name: Release to AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Immutable release tag (for example 0.3.0 or git SHA)
+        required: true
+        type: string
+      api_ref:
+        description: nventoryboss-api branch, tag, or commit to pair with this frontend
+        required: true
+        type: string
+      promote_to_production:
+        description: Promote the same images to production after demo succeeds
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 792233689386.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: aws-build
+    steps:
+      - name: Check out frontend
+        uses: actions/checkout@v4
+
+      - name: Check out API
+        uses: actions/checkout@v4
+        with:
+          repository: timothyharris54/nventoryboss-api
+          ref: ${{ inputs.api_ref }}
+          path: api
+          token: ${{ secrets.API_REPOSITORY_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sign in to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and publish immutable images
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          docker build --pull -t "$ECR_REGISTRY/nventoryboss-web:$RELEASE_TAG" .
+          docker build --pull -f docker/api.Dockerfile -t "$ECR_REGISTRY/nventoryboss-api:$RELEASE_TAG" api
+          docker push "$ECR_REGISTRY/nventoryboss-web:$RELEASE_TAG"
+          docker push "$ECR_REGISTRY/nventoryboss-api:$RELEASE_TAG"
+
+  deploy-demo:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy demo through Systems Manager
+        run: bash deploy/aws/deploy-via-ssm.sh demo '${{ inputs.release_tag }}'
+      - name: Verify demo
+        run: curl --fail --show-error --retry 12 --retry-delay 5 https://demo.nventoryboss.com/healthz
+
+  deploy-production:
+    if: ${{ inputs.promote_to_production }}
+    needs: deploy-demo
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy the demo-tested images through Systems Manager
+        run: bash deploy/aws/deploy-via-ssm.sh production '${{ inputs.release_tag }}'
+      - name: Verify production
+        run: curl --fail --show-error --retry 12 --retry-delay 5 https://app.nventoryboss.com/healthz

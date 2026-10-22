@@ -52,6 +52,11 @@ const navSections: NavSection[] = [
         allowedRoles: ['system_admin', 'account_admin'],
       },
       {
+        to: routes.replenishmentSettings,
+        label: 'Replenishment Settings',
+        allowedRoles: ['system_admin', 'account_admin'],
+      },
+      {
         to: routes.users,
         label: 'User Maintenance',
         allowedRoles: ['system_admin', 'account_admin'],
